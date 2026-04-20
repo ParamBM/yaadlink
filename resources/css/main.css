@@ -1,0 +1,257 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-sans: var(--font-body-family);
+    --font-headline: var(--font-headline-family);
+    --font-body: var(--font-body-family);
+    --font-label: var(--font-label-family);
+
+    --radius: 1rem;
+    --radius-sm: 0.875rem;
+    --radius-md: 1.5rem;
+    --radius-lg: 2rem;
+    --radius-xl: 3rem;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary-container: var(--primary-container);
+    --color-on-primary: var(--on-primary);
+    --color-on-primary-container: var(--on-primary-container);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary-container: var(--secondary-container);
+    --color-secondary-fixed: var(--secondary-fixed);
+    --color-secondary-fixed-dim: var(--secondary-fixed-dim);
+    --color-on-secondary: var(--on-secondary);
+    --color-on-secondary-container: var(--on-secondary-container);
+    --color-on-secondary-fixed: var(--on-secondary-fixed);
+    --color-on-secondary-fixed-variant: var(--on-secondary-fixed-variant);
+    --color-tertiary: var(--tertiary);
+    --color-tertiary-container: var(--tertiary-container);
+    --color-tertiary-fixed: var(--tertiary-fixed);
+    --color-tertiary-fixed-dim: var(--tertiary-fixed-dim);
+    --color-on-tertiary: var(--on-tertiary);
+    --color-on-tertiary-container: var(--on-tertiary-container);
+    --color-on-tertiary-fixed: var(--on-tertiary-fixed);
+    --color-on-tertiary-fixed-variant: var(--on-tertiary-fixed-variant);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-surface: var(--surface);
+    --color-surface-dim: var(--surface-dim);
+    --color-surface-bright: var(--surface-bright);
+    --color-surface-container-lowest: var(--surface-container-lowest);
+    --color-surface-container-low: var(--surface-container-low);
+    --color-surface-container: var(--surface-container);
+    --color-surface-container-high: var(--surface-container-high);
+    --color-surface-container-highest: var(--surface-container-highest);
+    --color-on-surface: var(--on-surface);
+    --color-on-surface-variant: var(--on-surface-variant);
+    --color-surface-tint: var(--surface-tint);
+    --color-outline: var(--outline);
+    --color-outline-variant: var(--outline-variant);
+    --color-error: var(--error);
+    --color-error-container: var(--error-container);
+    --color-on-error: var(--on-error);
+    --color-on-error-container: var(--on-error-container);
+    --color-inverse-surface: var(--inverse-surface);
+    --color-inverse-on-surface: var(--inverse-on-surface);
+    --color-inverse-primary: var(--inverse-primary);
+}
+
+:root {
+    --font-headline-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-body-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+    --font-label-family: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+
+    --background: #fbf9f8;
+    --foreground: #1b1c1c;
+    --card: #ffffff;
+    --card-foreground: #1b1c1c;
+    --popover: #ffffff;
+    --popover-foreground: #1b1c1c;
+    --primary: #b7102a;
+    --primary-foreground: #ffffff;
+    --primary-container: #db313f;
+    --secondary: #b02c2a;
+    --secondary-foreground: #ffffff;
+    --secondary-container: #ff665d;
+    --secondary-fixed: #ffdad6;
+    --secondary-fixed-dim: #ffb3ac;
+    --tertiary: #00666c;
+    --tertiary-container: #008189;
+    --tertiary-fixed: #8df2fb;
+    --tertiary-fixed-dim: #6fd6de;
+    --muted: #f0eded;
+    --muted-foreground: #5b403f;
+    --accent: #f6f3f2;
+    --accent-foreground: #1b1c1c;
+    --destructive: #ba1a1a;
+    --destructive-foreground: #ffffff;
+    --border: #e4bebc;
+    --input: #eae8e7;
+    --ring: #db313f;
+    --surface: #fbf9f8;
+    --surface-dim: #dcd9d9;
+    --surface-bright: #fbf9f8;
+    --surface-container-lowest: #ffffff;
+    --surface-container-low: #f6f3f2;
+    --surface-container: #f0eded;
+    --surface-container-high: #eae8e7;
+    --surface-container-highest: #e4e2e1;
+    --surface-tint: #bb152c;
+    --on-surface: #1b1c1c;
+    --on-surface-variant: #5b403f;
+    --outline: #8f6f6e;
+    --outline-variant: #e4bebc;
+    --error: #ba1a1a;
+    --error-container: #ffdad6;
+    --on-error: #ffffff;
+    --on-error-container: #93000a;
+    --on-primary: #ffffff;
+    --on-primary-container: #fffbff;
+    --on-primary-fixed: #410007;
+    --on-primary-fixed-variant: #92001c;
+    --on-secondary: #ffffff;
+    --on-secondary-container: #690008;
+    --on-secondary-fixed: #410003;
+    --on-secondary-fixed-variant: #8e1115;
+    --on-tertiary: #ffffff;
+    --on-tertiary-container: #f4feff;
+    --on-tertiary-fixed: #002022;
+    --on-tertiary-fixed-variant: #004f54;
+    --inverse-surface: #303030;
+    --inverse-on-surface: #f3f0f0;
+    --inverse-primary: #ffb3b1;
+    --primary-fixed: #ffdad8;
+    --primary-fixed-dim: #ffb3b1;
+}
+
+.dark {
+    --background: #181515;
+    --foreground: #f3f0f0;
+    --card: #221d1d;
+    --card-foreground: #f3f0f0;
+    --popover: #221d1d;
+    --popover-foreground: #f3f0f0;
+    --primary: #ffb3b1;
+    --primary-foreground: #680012;
+    --primary-container: #db313f;
+    --secondary: #ffb3ac;
+    --secondary-foreground: #680008;
+    --secondary-container: #ff665d;
+    --secondary-fixed: #ffdad6;
+    --secondary-fixed-dim: #ffb3ac;
+    --tertiary: #6fd6de;
+    --tertiary-foreground: #00363b;
+    --tertiary-container: #008189;
+    --tertiary-fixed: #8df2fb;
+    --tertiary-fixed-dim: #6fd6de;
+    --muted: #2b2525;
+    --muted-foreground: #d7c0bf;
+    --accent: #221d1d;
+    --accent-foreground: #f3f0f0;
+    --destructive: #ffb4ab;
+    --destructive-foreground: #690005;
+    --border: #5b403f;
+    --input: #362e2e;
+    --ring: #ffb3b1;
+    --surface: #181515;
+    --surface-dim: #100e0e;
+    --surface-bright: #413737;
+    --surface-container-lowest: #100e0e;
+    --surface-container-low: #221d1d;
+    --surface-container: #2b2525;
+    --surface-container-high: #362e2e;
+    --surface-container-highest: #413737;
+    --surface-tint: #ffb3b1;
+    --on-surface: #f3f0f0;
+    --on-surface-variant: #d7c0bf;
+    --outline: #a98988;
+    --outline-variant: #5b403f;
+    --error: #ffb4ab;
+    --error-container: #93000a;
+    --on-error: #690005;
+    --on-error-container: #ffdad6;
+    --on-primary: #680012;
+    --on-primary-container: #fff7f7;
+    --on-primary-fixed: #410007;
+    --on-primary-fixed-variant: #92001c;
+    --on-secondary: #680008;
+    --on-secondary-container: #fff7f7;
+    --on-secondary-fixed: #410003;
+    --on-secondary-fixed-variant: #8e1115;
+    --on-tertiary: #00363b;
+    --on-tertiary-container: #f4feff;
+    --on-tertiary-fixed: #002022;
+    --on-tertiary-fixed-variant: #004f54;
+    --inverse-surface: #f3f0f0;
+    --inverse-on-surface: #303030;
+    --inverse-primary: #b7102a;
+    --primary-fixed: #ffdad8;
+    --primary-fixed-dim: #ffb3b1;
+}
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: rgba(228, 190, 188, 0.15);
+        border-color: color-mix(in srgb, var(--outline-variant) 15%, transparent);
+    }
+
+    html {
+        color-scheme: light;
+        scroll-behavior: smooth;
+    }
+
+    .dark {
+        color-scheme: dark;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+        font-family: var(--font-body-family);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-headline-family);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+        font-family: var(--font-label-family);
+    }
+
+    ::selection {
+        background: color-mix(in srgb, var(--primary) 18%, white);
+        color: var(--on-surface);
+    }
+}
