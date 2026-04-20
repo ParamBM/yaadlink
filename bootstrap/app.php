@@ -6,16 +6,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 
-// On Vercel, the filesystem is read-only except /tmp
-if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
-    $tmpStorage = '/tmp/storage';
-    foreach (['app', 'app/public', 'framework', 'framework/cache', 'framework/sessions', 'framework/views', 'logs'] as $dir) {
-        @mkdir("$tmpStorage/$dir", 0775, true);
-    }
-    $_ENV['APP_STORAGE'] = $tmpStorage;
-}
-
-return Application::configure(basePath: dirname(__DIR__))
+$app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
@@ -31,3 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
+
+// On Vercel, redirect storage to /tmp (read-only filesystem)
+if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
+    $app->useStoragePath('/tmp/storage');
+}
+
+return $app;
