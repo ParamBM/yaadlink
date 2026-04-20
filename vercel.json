@@ -12,8 +12,8 @@
         { "src": "/(.*)", "dest": "/api/index.php" }
     ],
     "env": {
-        "APP_ENV": "production",
-        "APP_DEBUG": "false",
+        "APP_ENV": "local",
+        "APP_DEBUG": "true",
         "APP_URL": "https://yaadlink.vercel.app",
         "APP_KEY": "base64:1XT00cc24Xg6hHtta7BHhEF1fbcC59AGRFLB6rJWu2k=",
         "LOG_CHANNEL": "stderr",
