@@ -14,10 +14,12 @@
     "env": {
         "APP_ENV": "production",
         "APP_DEBUG": "false",
-        "APP_URL": "https://your-url.vercel.app",
-        "APP_KEY": "your-app-key",
+        "APP_URL": "https://yaadlink.vercel.app",
+        "APP_KEY": "base64:1XT00cc24Xg6hHtta7BHhEF1fbcC59AGRFLB6rJWu2k=",
         "LOG_CHANNEL": "stderr",
         "CACHE_DRIVER": "array",
-        "SESSION_DRIVER": "cookie"
+        "SESSION_DRIVER": "cookie",
+        "VIEW_COMPILED_PATH": "/tmp/views",
+        "CACHE_STORE": "array"
     }
 }
