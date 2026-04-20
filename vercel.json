@@ -1,0 +1,23 @@
+{
+    "version": 2,
+    "framework": null,
+    "installCommand": "composer install --no-dev --optimize-autoloader && npm install",
+    "buildCommand": "npm run build",
+    "functions": {
+        "api/index.php": { "runtime": "vercel-php@0.6.0" }
+    },
+    "routes": [
+        { "src": "/build/(.*)", "dest": "/public/build/$1" },
+        { "src": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|map))", "dest": "/public/$1" },
+        { "src": "/(.*)", "dest": "/api/index.php" }
+    ],
+    "env": {
+        "APP_ENV": "production",
+        "APP_DEBUG": "false",
+        "APP_URL": "https://your-url.vercel.app",
+        "APP_KEY": "your-app-key",
+        "LOG_CHANNEL": "stderr",
+        "CACHE_DRIVER": "array",
+        "SESSION_DRIVER": "cookie"
+    }
+}
