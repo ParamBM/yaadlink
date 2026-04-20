@@ -1,7 +1,7 @@
 {
     "version": 2,
     "framework": null,
-    "installCommand": "npm install",
+    "installCommand": "npm install && composer install --no-dev --no-scripts --optimize-autoloader",
     "buildCommand": "npm run build",
     "functions": {
         "api/index.php": { "runtime": "vercel-php@0.7.2" }
@@ -12,7 +12,7 @@
         { "src": "/(.*)", "dest": "/api/index.php" }
     ],
     "env": {
-        "APP_ENV": "local",
+        "APP_ENV": "production",
         "APP_DEBUG": "true",
         "APP_URL": "https://yaadlink.vercel.app",
         "APP_KEY": "base64:1XT00cc24Xg6hHtta7BHhEF1fbcC59AGRFLB6rJWu2k=",
@@ -20,6 +20,7 @@
         "CACHE_DRIVER": "array",
         "SESSION_DRIVER": "cookie",
         "VIEW_COMPILED_PATH": "/tmp/views",
-        "CACHE_STORE": "array"
+        "CACHE_STORE": "array",
+        "VERCEL": "1"
     }
 }
