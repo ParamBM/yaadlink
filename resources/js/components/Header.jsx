@@ -23,7 +23,7 @@ export default function Header() {
                     </div>
 
                     <Button
-                        className="rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-2.5 font-label font-medium text-on-primary shadow-[0_20px_40px_rgba(183,16,42,0.15)] transition-transform duration-200 hover:scale-[0.98]"
+                        className="cursor-pointer rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-2.5 font-label font-medium text-on-primary shadow-[0_20px_40px_rgba(183,16,42,0.15)] transition-transform duration-200 hover:scale-[0.98]"
                         type="button"
                     >
                         Create Site
