@@ -23,9 +23,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
         //
     })->create();
 
-// On Vercel, redirect storage to /tmp (read-only filesystem)
+// On Vercel: redirect storage and bootstrap cache to /tmp (filesystem is read-only)
 if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
     $app->useStoragePath('/tmp/storage');
+    $app->useBootstrapPath('/tmp/bootstrap');
 }
 
 return $app;
