@@ -1,4 +1,5 @@
-export const siteName = import.meta.env.VITE_APP_NAME || 'YaadLink';
+const envAppName = import.meta.env.VITE_APP_NAME;
+export const siteName = (envAppName && envAppName !== '${APP_NAME}') ? envAppName : 'YaadLink';
 export const logoPath = '/branding/logo.webp';
 
 export const headerLinks = [
