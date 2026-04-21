@@ -1,5 +1,5 @@
 export const siteName = import.meta.env.VITE_APP_NAME || 'YaadLink';
-export const logoPath = '/branding/logo.png';
+export const logoPath = '/branding/logo.webp';
 
 export const headerLinks = [
     { label: 'Our Story', href: '#' },

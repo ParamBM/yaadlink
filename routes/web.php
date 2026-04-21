@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+// Catch-all: serve the React SPA for every non-API request.
+// Routing is handled entirely by React Router on the frontend.
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '.*');

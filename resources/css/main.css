@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import 'tailwindcss';
 
 @plugin 'tailwindcss-animate';
@@ -75,6 +76,7 @@
     --color-inverse-surface: var(--inverse-surface);
     --color-inverse-on-surface: var(--inverse-on-surface);
     --color-inverse-primary: var(--inverse-primary);
+    --color-primary-accent: var(--primary-accent);
 }
 
 :root {
@@ -143,6 +145,7 @@
     --inverse-primary: #ffb3b1;
     --primary-fixed: #ffdad8;
     --primary-fixed-dim: #ffb3b1;
+    --primary-accent: #e63946;
 }
 
 .dark {
@@ -208,6 +211,7 @@
     --inverse-primary: #b7102a;
     --primary-fixed: #ffdad8;
     --primary-fixed-dim: #ffb3b1;
+    --primary-accent: #e63946;
 }
 
 @layer base {
@@ -253,5 +257,14 @@
     ::selection {
         background: color-mix(in srgb, var(--primary) 18%, white);
         color: var(--on-surface);
+    }
+}
+
+@layer utilities {
+    .hover-bg-primary-accent:hover {
+        background-color: #d62828;
+    }
+    .ambient-shadow {
+        box-shadow: 0 20px 40px rgba(183, 16, 42, 0.06);
     }
 }

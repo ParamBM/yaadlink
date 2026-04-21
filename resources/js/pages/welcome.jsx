@@ -1,9 +1,5 @@
-import { Head } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
-
-import Footer from '@/components/Footer';
-import Header from '@/components/Header';
-import { Button } from '@/components/ui/button';
+import { Link } from 'react-router';
 
 export default function Welcome() {
     const [isVisible, setIsVisible] = useState(false);
@@ -16,12 +12,6 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="Landing Page - The Modern Heirloom" />
-
-            <div className="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
-                <Header />
-
-                <main className="flex-grow">
                     {/* Hero Section */}
                     <section className="relative min-h-[921px] flex items-center justify-center overflow-hidden py-20">
                         {/* Background Elements */}
@@ -33,21 +23,21 @@ export default function Welcome() {
 
                         <div className="container mx-auto px-6 relative z-10">
                             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                                <div className={`max-w-2xl transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+                                <div className={`max-w-2xl mx-auto md:mx-0 text-center md:text-left transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
                                     <span className="inline-block py-1.5 px-4 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label text-sm font-semibold mb-6 mt-8 md:mt-0">
                                         Celebrate Every Moment
                                     </span>
                                     <h1 className="font-headline text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tighter text-on-surface leading-[1.1] mb-6">
                                         Turn your story into something <span className="text-primary">beautiful.</span>
                                     </h1>
-                                    <p className="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed mb-10 max-w-xl">
+                                    <p className="font-body text-lg md:text-xl text-on-surface-variant leading-relaxed mb-10 max-w-xl mx-auto md:mx-0">
                                         Create a stunning personal page for any moment that matters — in minutes, no design skills needed.
                                     </p>
                                     <div className="flex flex-col sm:flex-row gap-4">
-                                        <button className="cursor-pointer bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-full font-label font-semibold text-lg hover:scale-[0.98] transition-transform duration-200 shadow-[0_20px_40px_rgba(183,16,42,0.15)] flex items-center justify-center gap-2">
+                                        <Link to="/onboarding" className="cursor-pointer bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-full font-label font-semibold text-lg hover:scale-[0.98] transition-transform duration-200 shadow-[0_20px_40px_rgba(183,16,42,0.15)] flex items-center justify-center gap-2">
                                             Create your page
                                             <span aria-hidden="true" className="material-symbols-outlined text-xl">arrow_forward</span>
-                                        </button>
+                                        </Link>
                                         <button className="cursor-pointer px-8 py-4 rounded-full font-label font-semibold text-primary border border-outline-variant/30 hover:bg-surface-container-low transition-colors duration-200 flex items-center justify-center gap-2">
                                             <span aria-hidden="true" className="material-symbols-outlined text-xl">play_circle</span>
                                             See Examples
@@ -237,10 +227,6 @@ export default function Welcome() {
                             </div>
                         </div>
                     </section>
-                </main>
-
-                <Footer />
-            </div>
         </>
     );
 }
