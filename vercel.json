@@ -10,25 +10,25 @@
             }
         },
         {
-            "src": "api/index.php",
+            "src": "server/index.php",
             "use": "vercel-php@0.7.2"
         }
     ],
     "routes": [
         {
             "src": "^/$",
-            "dest": "/api/index.php"
+            "dest": "/server/index.php"
         },
         {
             "src": "^/index\\.php$",
-            "dest": "/api/index.php"
+            "dest": "/server/index.php"
         },
         {
             "handle": "filesystem"
         },
         {
             "src": "/(.*)",
-            "dest": "/api/index.php"
+            "dest": "/server/index.php"
         }
     ],
     "env": {
