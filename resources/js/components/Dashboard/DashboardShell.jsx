@@ -24,6 +24,7 @@ export default function DashboardShell({ children }) {
         (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
     );
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [confirmLogout, setConfirmLogout] = useState(false);
 
     useEffect(() => {
         if (isDark) {
@@ -114,7 +115,7 @@ export default function DashboardShell({ children }) {
                     {/* Sign Out button */}
                     <button
                         className="w-full py-3 px-5 rounded-full bg-surface-container hover:bg-error-container/30 dark:bg-stone-800 dark:hover:bg-red-900/30 text-on-surface-variant dark:text-stone-400 hover:text-error dark:hover:text-red-400 font-bold text-sm hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2 font-headline border border-outline-variant/20 dark:border-stone-700/50"
-                        onClick={handleLogout}
+                        onClick={() => setConfirmLogout(true)}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>logout</span>
                         Sign Out
@@ -176,6 +177,40 @@ export default function DashboardShell({ children }) {
                 {/* Page content */}
                 {children}
             </main>
+
+            {/* Logout Confirmation Modal */}
+            {confirmLogout && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-surface dark:bg-stone-900 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border border-outline-variant/20 dark:border-stone-700 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="w-16 h-16 rounded-full bg-error-container dark:bg-red-900/30 text-error dark:text-red-400 flex items-center justify-center mb-6 mx-auto">
+                            <span className="material-symbols-outlined text-3xl">logout</span>
+                        </div>
+                        <h2 className="font-headline text-xl font-bold text-center text-on-surface dark:text-white mb-2">
+                            Sign Out?
+                        </h2>
+                        <p className="text-on-surface-variant dark:text-stone-400 text-center text-sm font-body mb-8">
+                            Are you sure you want to sign out? You will need to log back in to access the dashboard.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmLogout(false)}
+                                className="flex-1 py-3 px-4 rounded-full border border-outline-variant dark:border-stone-700 text-on-surface-variant dark:text-stone-300 font-bold text-sm hover:bg-surface-variant dark:hover:bg-stone-800 transition-colors font-headline"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setConfirmLogout(false);
+                                    handleLogout();
+                                }}
+                                className="flex-1 py-3 px-4 rounded-full bg-error hover:bg-error/90 dark:bg-red-500 dark:hover:bg-red-400 font-bold text-sm text-white transition-colors font-headline"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -14,9 +14,6 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout',         [UserController::class, 'logout'])->middleware(CheckRole::class);
     Route::get('/check',           [UserController::class, 'authenticateToken'])->middleware(CheckRole::class);
 
-    // Google OAuth
-    Route::get('/google/redirect', [SocialAuthController::class, 'redirect']);
-    Route::get('/google/callback', [SocialAuthController::class, 'callback']);
 });
 
 // ── Users (admin / director) ──────────────────────────────────────────────────
