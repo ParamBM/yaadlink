@@ -279,9 +279,10 @@ class UserController extends Controller
             return ['mode' => 'none', 'department_id' => null];
     }
 
-        // Safety (if some env doesn't have dept column yet)
+        // Safety (if some env doesn't have dept column yet — fall through to 'all'
+        // since CheckRole middleware already validated admin/director role)
         if (!Schema::hasColumn('users', 'department_id')) {
-            return ['mode' => 'not_allowed', 'department_id' => null];
+            return ['mode' => 'all', 'department_id' => null];
         }
 
         $q = DB::table('users')->select(['id', 'role', 'department_id', 'status']);
@@ -1071,9 +1072,18 @@ if (in_array($role, [
             return response()->json(['error' => 'Not allowed'], 403);
         }
 
-        $qUser = DB::table('users')
-            ->where('uuid', $uuid)
-            ->whereNull('deleted_at');
+        $qUser = DB::table('users');
+        
+        if (Schema::hasColumn('users', 'uuid')) {
+            $qUser->where('uuid', $uuid);
+        } else {
+            // Fallback: if uuid doesn't exist, the parameter is actually the ID
+            $qUser->where('id', $uuid);
+        }
+
+        if (Schema::hasColumn('users', 'deleted_at')) {
+            $qUser->whereNull('deleted_at');
+        }
 
         if ($ac['mode'] === 'department') {
             $qUser->where('department_id', (int)$ac['department_id']);

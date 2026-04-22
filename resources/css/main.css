@@ -227,6 +227,7 @@
     html {
         color-scheme: light;
         scroll-behavior: smooth;
+        font-size: 90%; /* Scales down 1rem from 16px to 14.4px */
     }
 
     .dark {
