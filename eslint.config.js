@@ -28,6 +28,7 @@ export default [
         },
         rules: {
             'react/react-in-jsx-scope': 'off',
+            'react/jsx-uses-vars': 'error',
             'react/prop-types': 'off',
             'react/no-unescaped-entities': 'off',
         },

@@ -19,6 +19,9 @@ $app = Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
+        $middleware->appendToGroup('api', [
+            \App\Http\Middleware\LogMutationActivity::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

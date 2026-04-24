@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useDispatch } from 'react-redux';
-import { loginSuccess } from '../store/slices/authSlice';
+import { loginSuccess } from '../../store/slices/authSlice';
 import axios from 'axios';
 
 export default function OAuthCallback() {
@@ -21,11 +21,11 @@ export default function OAuthCallback() {
             }
 
             if (token) {
-                // Save token
+                // Only the token is persisted — user data lives in Redux only
                 sessionStorage.setItem('token', token);
-                
+
                 try {
-                    // Fetch user details to complete login flow
+                    // Fetch user details from backend to complete login flow
                     const response = await axios.get('/api/auth/check', {
                         headers: { Authorization: `Bearer ${token}` }
                     });
@@ -33,8 +33,7 @@ export default function OAuthCallback() {
                     if (response.data.success) {
                         const user = response.data.user;
                         dispatch(loginSuccess({ user, token }));
-                        
-                        // Redirect based on role
+
                         if (user.role === 'admin') {
                             navigate('/dashboard');
                         } else {

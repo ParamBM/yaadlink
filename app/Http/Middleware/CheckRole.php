@@ -61,7 +61,10 @@ class CheckRole
         if (!$user) {
             return response()->json(['error' => 'Unauthorized Access'], 403);
         }
-        if (isset($user->status) && $user->status !== 'active') {
+        $isInactive = (isset($user->status) && $this->isInactiveStatus($user->status))
+            || (!isset($user->status) && isset($user->deleted_at) && $user->deleted_at !== null);
+
+        if ($isInactive) {
             return response()->json(['error' => 'Account is not active'], 403);
         }
 
@@ -99,6 +102,25 @@ class CheckRole
     }
 
     /** normalize a single role → canonical token (alnum only), then alias map */
+    /** accept both string and flag-based user status values */
+    private function isInactiveStatus($status): bool
+    {
+        if ($status === null || $status === '') {
+            return false;
+        }
+
+        if (is_bool($status)) {
+            return $status === false;
+        }
+
+        if (is_int($status) || is_float($status)) {
+            return ((int) $status) === 0;
+        }
+
+        $normalized = strtolower(trim((string) $status));
+        return in_array($normalized, ['0', 'false', 'inactive', 'disabled'], true);
+    }
+
     private function normalize(string $role): string
     {
         $r = mb_strtolower(trim($role));

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginStart, loginSuccess, loginFailure } from '../store/slices/authSlice';
+import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
 import axios from 'axios';
 
 export default function Login() {
@@ -24,11 +24,11 @@ export default function Login() {
             const response = await axios.post('/api/auth/login', { email, password });
             if (response.data.success) {
                 const { user, token } = response.data;
+                // Only the token is persisted — user data lives in Redux only
                 sessionStorage.setItem('token', token);
-                
+
                 dispatch(loginSuccess({ user, token }));
-                
-                // Check role and navigate conditionally
+
                 if (user.role === 'admin') {
                     navigate('/dashboard');
                 } else {

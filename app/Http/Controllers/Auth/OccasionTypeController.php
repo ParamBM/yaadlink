@@ -5,22 +5,42 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class OccasionTypeController extends Controller
 {
+    private function hasColumn(string $column): bool
+    {
+        return Schema::hasTable('occasion_types') && Schema::hasColumn('occasion_types', $column);
+    }
+
+    private function baseOccasionQuery()
+    {
+        $query = DB::table('occasion_types');
+
+        if ($this->hasColumn('deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        if ($this->hasColumn('sort_order')) {
+            $query->orderBy('sort_order');
+        } else {
+            $query->orderByDesc('id');
+        }
+
+        return $query;
+    }
+
     /**
      * Protected index for Admins/Directors
      * Returns all occasion types including inactive ones.
      */
     public function index(Request $request)
     {
-        $occasions = DB::table('occasion_types')
-            ->whereNull('deleted_at')
-            ->orderBy('sort_order')
-            ->get();
+        $occasions = $this->baseOccasionQuery()->get();
 
         return response()->json([
             'success' => true,
@@ -34,11 +54,13 @@ class OccasionTypeController extends Controller
      */
     public function publicIndex()
     {
-        $occasions = DB::table('occasion_types')
-            ->whereNull('deleted_at')
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get();
+        $query = $this->baseOccasionQuery();
+
+        if ($this->hasColumn('is_active')) {
+            $query->where('is_active', true);
+        }
+
+        $occasions = $query->get();
 
         return response()->json([
             'success' => true,
@@ -69,28 +91,38 @@ class OccasionTypeController extends Controller
         $data = $v->validated();
         $now = Carbon::now();
 
-        // Generate unique slug
-        $baseSlug = Str::slug($data['name']);
-        if ($baseSlug === '') $baseSlug = 'occasion';
-        $slug = $baseSlug;
-        $i = 1;
-        while (DB::table('occasion_types')->where('slug', $slug)->exists()) {
-            $slug = $baseSlug . '-' . $i;
-            $i++;
-        }
-
         $insertData = [
-            'uuid' => (string) Str::uuid(),
-            'name' => $data['name'],
-            'slug' => $slug,
-            'description' => $data['description'] ?? null,
-            'icon' => $data['icon'] ?? null,
-            'is_active' => $data['is_active'] ?? true,
-            'sort_order' => $data['sort_order'] ?? 0,
-            'created_by' => $request->attributes->get('auth_tokenable_id'),
             'created_at' => $now,
             'updated_at' => $now,
         ];
+
+        foreach (['name', 'description', 'icon', 'is_active', 'sort_order'] as $column) {
+            if ($this->hasColumn($column) && array_key_exists($column, $data)) {
+                $insertData[$column] = $data[$column];
+            }
+        }
+
+        if ($this->hasColumn('uuid')) {
+            $insertData['uuid'] = (string) Str::uuid();
+        }
+
+        if ($this->hasColumn('created_by')) {
+            $insertData['created_by'] = $request->attributes->get('auth_tokenable_id');
+        }
+
+        if ($this->hasColumn('slug')) {
+            $baseSlug = Str::slug($data['name']);
+            if ($baseSlug === '') $baseSlug = 'occasion';
+
+            $slug = $baseSlug;
+            $i = 1;
+            while (DB::table('occasion_types')->where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $i;
+                $i++;
+            }
+
+            $insertData['slug'] = $slug;
+        }
 
         $id = DB::table('occasion_types')->insertGetId($insertData);
 
@@ -108,10 +140,11 @@ class OccasionTypeController extends Controller
      */
     public function show($id)
     {
-        $occasion = DB::table('occasion_types')
-            ->where('id', $id)
-            ->whereNull('deleted_at')
-            ->first();
+        $query = DB::table('occasion_types')->where('id', $id);
+        if ($this->hasColumn('deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+        $occasion = $query->first();
 
         if (!$occasion) {
             return response()->json([
@@ -131,10 +164,11 @@ class OccasionTypeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $occasion = DB::table('occasion_types')
-            ->where('id', $id)
-            ->whereNull('deleted_at')
-            ->first();
+        $query = DB::table('occasion_types')->where('id', $id);
+        if ($this->hasColumn('deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+        $occasion = $query->first();
 
         if (!$occasion) {
             return response()->json([
@@ -163,25 +197,26 @@ class OccasionTypeController extends Controller
             'updated_at' => Carbon::now()
         ];
 
-        if (isset($data['name']) && $data['name'] !== $occasion->name) {
+        if ($this->hasColumn('name') && isset($data['name']) && $data['name'] !== $occasion->name) {
             $updates['name'] = $data['name'];
-            
-            // Regenerate slug
-            $baseSlug = Str::slug($data['name']);
-            if ($baseSlug === '') $baseSlug = 'occasion';
-            $slug = $baseSlug;
-            $i = 1;
-            while (DB::table('occasion_types')->where('slug', $slug)->where('id', '!=', $id)->exists()) {
-                $slug = $baseSlug . '-' . $i;
-                $i++;
+
+            if ($this->hasColumn('slug')) {
+                $baseSlug = Str::slug($data['name']);
+                if ($baseSlug === '') $baseSlug = 'occasion';
+                $slug = $baseSlug;
+                $i = 1;
+                while (DB::table('occasion_types')->where('slug', $slug)->where('id', '!=', $id)->exists()) {
+                    $slug = $baseSlug . '-' . $i;
+                    $i++;
+                }
+                $updates['slug'] = $slug;
             }
-            $updates['slug'] = $slug;
         }
 
-        if (array_key_exists('description', $data)) $updates['description'] = $data['description'];
-        if (array_key_exists('icon', $data)) $updates['icon'] = $data['icon'];
-        if (isset($data['is_active'])) $updates['is_active'] = $data['is_active'];
-        if (isset($data['sort_order'])) $updates['sort_order'] = $data['sort_order'];
+        if ($this->hasColumn('description') && array_key_exists('description', $data)) $updates['description'] = $data['description'];
+        if ($this->hasColumn('icon') && array_key_exists('icon', $data)) $updates['icon'] = $data['icon'];
+        if ($this->hasColumn('is_active') && isset($data['is_active'])) $updates['is_active'] = $data['is_active'];
+        if ($this->hasColumn('sort_order') && isset($data['sort_order'])) $updates['sort_order'] = $data['sort_order'];
 
         DB::table('occasion_types')->where('id', $id)->update($updates);
 
@@ -199,10 +234,11 @@ class OccasionTypeController extends Controller
      */
     public function destroy($id)
     {
-        $occasion = DB::table('occasion_types')
-            ->where('id', $id)
-            ->whereNull('deleted_at')
-            ->first();
+        $query = DB::table('occasion_types')->where('id', $id);
+        if ($this->hasColumn('deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+        $occasion = $query->first();
 
         if (!$occasion) {
             return response()->json([
@@ -211,9 +247,13 @@ class OccasionTypeController extends Controller
             ], 404);
         }
 
-        DB::table('occasion_types')->where('id', $id)->update([
-            'deleted_at' => Carbon::now()
-        ]);
+        if ($this->hasColumn('deleted_at')) {
+            DB::table('occasion_types')->where('id', $id)->update([
+                'deleted_at' => Carbon::now(),
+            ]);
+        } else {
+            DB::table('occasion_types')->where('id', $id)->delete();
+        }
 
         return response()->json([
             'success' => true,

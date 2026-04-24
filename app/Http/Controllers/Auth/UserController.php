@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\UserActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
@@ -19,6 +21,7 @@ class UserController extends Controller
 {
     /** tokenable_type stored in personal_access_tokens (Sanctum) */
     private const USER_TYPE = 'App\\Models\\User';
+    private const USERS_INDEX_CACHE_VERSION_KEY = 'users_index_cache_version';
 
     /**
      * MSIT Home Builder roles:
@@ -37,6 +40,7 @@ class UserController extends Controller
         'student',
         'alumni', // ✅ added
         'program_topper', // ✅ added
+        'user', // ✅ added
     ];
 
     private const ROLE_SHORT_MAP = [
@@ -52,6 +56,7 @@ class UserController extends Controller
         'student'             => 'STD',
         'alumni'              => 'ALU',   // ✅ added
         'program_topper'      => 'TOP',   // ✅ added
+        'user'                => 'USR',   // ✅ added
     ];
 
     // ✅ Added: name_short_form + employee_id + department_id
@@ -80,10 +85,12 @@ class UserController extends Controller
         'metadata',
         'created_at',
         'updated_at',
+        'deleted_at',
     ];
 
     /** cache for safe select columns */
     protected ?array $selectColsCache = null;
+    protected ?bool $userStatusFlagCache = null;
 
     /**
      * ✅ Safe select columns (won't break if migration not run yet)
@@ -99,6 +106,182 @@ class UserController extends Controller
 
         $this->selectColsCache = $cols;
         return $cols;
+    }
+
+    private function userHasColumn(string $column): bool
+    {
+        return Schema::hasColumn('users', $column);
+    }
+
+    private function userUsesDeletedAtStatusFallback(): bool
+    {
+        return !$this->userHasColumn('status') && $this->userHasColumn('deleted_at');
+    }
+
+    private function userStatusUsesFlagStorage(): bool
+    {
+        if ($this->userStatusFlagCache !== null) {
+            return $this->userStatusFlagCache;
+        }
+
+        if (!$this->userHasColumn('status')) {
+            return $this->userStatusFlagCache = false;
+        }
+
+        try {
+            $type = strtolower((string) Schema::getColumnType('users', 'status'));
+        } catch (\Throwable $e) {
+            return $this->userStatusFlagCache = false;
+        }
+
+        return $this->userStatusFlagCache = in_array($type, [
+            'bool',
+            'boolean',
+            'tinyint',
+            'smallint',
+            'mediumint',
+            'integer',
+            'int',
+            'bigint',
+        ], true);
+    }
+
+    private function normalizeUserStatus($status): string
+    {
+        if ($status === null || $status === '') {
+            return 'active';
+        }
+
+        if (is_bool($status)) {
+            return $status ? 'active' : 'inactive';
+        }
+
+        if (is_int($status) || is_float($status)) {
+            return ((int) $status) === 1 ? 'active' : 'inactive';
+        }
+
+        $normalized = strtolower(trim((string) $status));
+
+        if (in_array($normalized, ['0', 'false', 'inactive', 'disabled'], true)) {
+            return 'inactive';
+        }
+
+        return 'active';
+    }
+
+    private function userStatusStorageValue($status)
+    {
+        $normalized = $this->normalizeUserStatus($status);
+
+        if ($this->userStatusUsesFlagStorage()) {
+            return $normalized === 'active' ? 1 : 0;
+        }
+
+        return $normalized;
+    }
+
+    private function applyUserIdentifierScope($query, $identifier)
+    {
+        $identifier = trim((string) $identifier);
+
+        if ($identifier === '' || in_array(strtolower($identifier), ['undefined', 'null'], true)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        if (ctype_digit($identifier)) {
+            return $query->where('id', (int) $identifier);
+        }
+
+        if ($this->userHasColumn('uuid')) {
+            return $query->where('uuid', $identifier);
+        }
+
+        return $query->where('id', $identifier);
+    }
+
+    private function applyUserStatusFilter($query, ?string $status)
+    {
+        $status = is_string($status) ? strtolower(trim($status)) : null;
+
+        if ($status === null || $status === '' || $status === 'all') {
+            return $query;
+        }
+
+        if ($this->userHasColumn('status')) {
+            return $query->where('status', $this->userStatusStorageValue($status));
+        }
+
+        if ($this->userUsesDeletedAtStatusFallback()) {
+            return $status === 'inactive'
+                ? $query->whereNotNull('deleted_at')
+                : $query->whereNull('deleted_at');
+        }
+
+        return $query;
+    }
+
+    private function currentUserStatus($user): string
+    {
+        if ($user && $this->userHasColumn('status')) {
+            return $this->normalizeUserStatus($user->status ?? null);
+        }
+
+        if ($user && $this->userUsesDeletedAtStatusFallback()) {
+            return empty($user->deleted_at) ? 'active' : 'inactive';
+        }
+
+        return 'active';
+    }
+
+    private function isUserInactive($user): bool
+    {
+        return $this->currentUserStatus($user) !== 'active';
+    }
+
+    private function presentUser($user)
+    {
+        if (!$user) {
+            return $user;
+        }
+
+        $user->status = $this->currentUserStatus($user);
+        $user->is_active = $user->status === 'active' ? 1 : 0;
+        return $user;
+    }
+
+    private function presentUsers($users)
+    {
+        return collect($users)->map(fn ($user) => $this->presentUser($user))->values();
+    }
+
+    private function applyUserStatusUpdate(array &$update, $status, Carbon $now): bool
+    {
+        $normalized = $this->normalizeUserStatus($status);
+
+        if ($this->userHasColumn('status')) {
+            $update['status'] = $this->userStatusStorageValue($normalized);
+            return true;
+        }
+
+        if ($this->userUsesDeletedAtStatusFallback()) {
+            $update['deleted_at'] = $normalized === 'inactive' ? $now : null;
+            return true;
+        }
+
+        return false;
+    }
+
+    private function usersIndexCacheKey(array $parts): string
+    {
+        $version = (int) Cache::get(self::USERS_INDEX_CACHE_VERSION_KEY, 1);
+
+        return 'users_index_' . $version . '_' . md5(json_encode($parts));
+    }
+
+    private function invalidateUsersIndexCache(): void
+    {
+        $version = (int) Cache::get(self::USERS_INDEX_CACHE_VERSION_KEY, 1);
+        Cache::forever(self::USERS_INDEX_CACHE_VERSION_KEY, $version + 1);
     }
 
     /* =========================
@@ -129,65 +312,7 @@ class UserController extends Controller
     }
 
     /**
-     * ✅ NEW: sanitize snapshots for activity log (avoid secrets + huge payloads)
-     */
-    private function sanitizeForActivityLog($data, int $depth = 0)
-    {
-        if ($data === null) return null;
-
-        // prevent deep recursion
-        if ($depth > 3) {
-            if (is_array($data)) return '[array]';
-            if (is_object($data)) return '[object]';
-            return is_string($data) ? mb_substr($data, 0, 200) : $data;
-        }
-
-        // scalars
-        if (is_bool($data) || is_int($data) || is_float($data)) return $data;
-
-        if (is_string($data)) {
-            $s = trim($data);
-            if (mb_strlen($s) > 800) $s = mb_substr($s, 0, 800) . '…';
-            return $s;
-        }
-
-        // objects -> array
-        if (is_object($data)) {
-            $data = (array) $data;
-        }
-
-        if (is_array($data)) {
-            $blockedKeys = [
-                'password', 'current_password', 'token', 'plainToken', 'authorization',
-                'abilities', 'remember_token'
-            ];
-
-            $out = [];
-            $count = 0;
-
-            foreach ($data as $k => $v) {
-                $count++;
-                if ($count > 60) { $out['__truncated__'] = true; break; }
-
-                $key = is_string($k) ? strtolower($k) : $k;
-
-                if (is_string($key) && in_array($key, $blockedKeys, true)) {
-                    $out[$k] = '[redacted]';
-                    continue;
-                }
-
-                $out[$k] = $this->sanitizeForActivityLog($v, $depth + 1);
-            }
-
-            return $out;
-        }
-
-        return (string) $data;
-    }
-
-    /**
-     * ✅ NEW: write to user_data_activity_log (safe: won't break if table missing)
-     * Logs every POST/PUT/PATCH/DELETE activity (except GET endpoints).
+     * Write to user_data_activity_log (delegates to UserActivityLogger).
      */
     private function activityLog(
         Request $r,
@@ -201,56 +326,18 @@ class UserController extends Controller
         ?string $note = null,
         ?array $actorOverride = null
     ): void {
-        try {
-            if (!Schema::hasTable('user_data_activity_log')) return;
-
-            $a = $actorOverride ?: $this->actor($r);
-
-            $performedBy = (int)($a['id'] ?? 0);
-            if ($performedBy < 0) $performedBy = 0;
-
-            $performedRole = $a['role'] ?? null;
-            $performedRole = is_string($performedRole) ? trim($performedRole) : null;
-            if ($performedRole === '') $performedRole = null;
-
-            $ua = (string)($r->userAgent() ?? '');
-            if (strlen($ua) > 512) $ua = substr($ua, 0, 512);
-
-            $now = Carbon::now();
-
-            $payload = [
-                'performed_by'       => $performedBy,
-                'performed_by_role'  => $performedRole,
-                'ip'                 => $r->ip(),
-                'user_agent'         => $ua,
-
-                'activity'           => substr($activity, 0, 50),
-                'module'             => substr($module, 0, 100),
-
-                'table_name'         => substr($tableName, 0, 128),
-                'record_id'          => $recordId,
-
-                'changed_fields'     => $changedFields !== null ? json_encode($this->sanitizeForActivityLog($changedFields), JSON_UNESCAPED_UNICODE) : null,
-                'old_values'         => $oldValues !== null ? json_encode($this->sanitizeForActivityLog($oldValues), JSON_UNESCAPED_UNICODE) : null,
-                'new_values'         => $newValues !== null ? json_encode($this->sanitizeForActivityLog($newValues), JSON_UNESCAPED_UNICODE) : null,
-
-                'log_note'           => $note,
-
-                'created_at'         => $now,
-                'updated_at'         => $now,
-            ];
-
-            DB::table('user_data_activity_log')->insert($payload);
-        } catch (\Throwable $e) {
-            // never break API because of logging
-            Log::warning('user_data_activity_log.write_failed', [
-                'error' => $e->getMessage(),
-                'activity' => $activity,
-                'module' => $module,
-                'table_name' => $tableName,
-                'record_id' => $recordId,
-            ]);
-        }
+        UserActivityLogger::log(
+            $r,
+            $activity,
+            $module,
+            $tableName,
+            $recordId,
+            $changedFields,
+            $oldValues,
+            $newValues,
+            $note,
+            $actorOverride
+        );
     }
 
     private function extractToken(Request $request): ?string
@@ -285,12 +372,11 @@ class UserController extends Controller
             return ['mode' => 'all', 'department_id' => null];
         }
 
-        $q = DB::table('users')->select(['id', 'role', 'department_id', 'status']);
+        $selectCols = ['id', 'role', 'department_id'];
+        if ($this->userHasColumn('status')) $selectCols[] = 'status';
+        if ($this->userHasColumn('deleted_at')) $selectCols[] = 'deleted_at';
 
-        // your schema has deleted_at; keep it safe
-        if (Schema::hasColumn('users', 'deleted_at')) {
-            $q->whereNull('deleted_at');
-        }
+        $q = DB::table('users')->select($selectCols);
 
         $u = $q->where('id', $userId)->first();
 
@@ -299,7 +385,7 @@ class UserController extends Controller
         }
 
         // optional: inactive users => none
-        if (isset($u->status) && (string)$u->status !== 'active') {
+        if ($this->isUserInactive($u)) {
             return ['mode' => 'none', 'department_id' => null];
         }
 
@@ -489,6 +575,144 @@ if (in_array($role, [
      * ===================================================== */
 
     /**
+     * POST /api/auth/register
+     * Public registration endpoint for standard users.
+     */
+    public function register(Request $request)
+    {
+        $v = Validator::make($request->all(), [
+            'name'                  => ['required', 'string', 'max:190'],
+            'email'                 => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password'              => ['required', 'string', 'min:8', 'confirmed'],
+            'phone_number'          => ['nullable', 'string', 'max:32', 'unique:users,phone_number'],
+        ]);
+
+        if ($v->fails()) {
+            $this->activityLog(
+                $request,
+                'register_failed_validation',
+                'auth',
+                'users',
+                null,
+                array_keys($request->all() ?: []),
+                null,
+                ['email' => (string) $request->input('email')],
+                'Validation failed',
+                ['id' => 0, 'role' => null]
+            );
+
+            return response()->json([
+                'success' => false,
+                'errors'  => $v->errors(),
+                'error'   => $v->errors()->first() ?: 'Validation failed',
+            ], 422);
+        }
+
+        $data = $v->validated();
+        $now = Carbon::now();
+
+        DB::beginTransaction();
+
+        try {
+            $uuid = (string) Str::uuid();
+            $slug = $this->generateUniqueSlug($data['name']);
+
+            $insert = [
+                'name'            => $data['name'],
+                'email'           => $data['email'],
+                'password'        => Hash::make($data['password']),
+                'uuid'            => $uuid,
+                'slug'            => $slug,
+                'phone_number'    => $data['phone_number'] ?? null,
+                'role'            => 'user',
+                'role_short_form' => self::ROLE_SHORT_MAP['user'] ?? 'USR',
+                'status'          => $this->userStatusStorageValue('active'),
+                'created_at_ip'   => $request->ip(),
+                'created_at'      => $now,
+                'updated_at'      => $now,
+            ];
+
+            $id = DB::table('users')->insertGetId($insert);
+
+            $plainToken  = Str::random(80);
+            $hashedToken = hash('sha256', $plainToken);
+
+            DB::table('personal_access_tokens')->insert([
+                'tokenable_type' => self::USER_TYPE,
+                'tokenable_id'   => $id,
+                'name'           => 'msit-api',
+                'token'          => $hashedToken,
+                'abilities'      => json_encode(['*']),
+                'last_used_at'   => null,
+                'created_at'     => $now,
+                'updated_at'     => $now,
+            ]);
+
+            $updates = [];
+            if (Schema::hasColumn('users', 'last_login_at')) $updates['last_login_at'] = $now;
+            if (Schema::hasColumn('users', 'last_login_ip')) $updates['last_login_ip'] = $request->ip();
+
+            if (!empty($updates)) {
+                DB::table('users')->where('id', $id)->update($updates);
+            }
+
+            DB::commit();
+            $this->invalidateUsersIndexCache();
+
+            $user = DB::table('users')
+                ->select($this->userSelectColumns())
+                ->where('id', $id)
+                ->first();
+
+            $this->activityLog(
+                $request,
+                'register',
+                'auth',
+                'users',
+                (int) $id,
+                ['name', 'email', 'phone_number', 'role', 'status'],
+                null,
+                [
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'phone_number' => $data['phone_number'] ?? null,
+                    'role' => 'user',
+                    'status' => 'active',
+                ],
+                'Public registration successful',
+                ['id' => (int) $id, 'role' => 'user']
+            );
+
+            return response()->json([
+                'success'    => true,
+                'token'      => $plainToken,
+                'token_type' => 'Bearer',
+                'user'       => $this->presentUser($user),
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            $this->activityLog(
+                $request,
+                'register_failed',
+                'auth',
+                'users',
+                null,
+                null,
+                null,
+                null,
+                'Failed to register user: ' . $e->getMessage(),
+                ['id' => 0, 'role' => null]
+            );
+
+            return response()->json([
+                'success' => false,
+                'error'   => 'Failed to register',
+            ], 500);
+        }
+    }
+
+    /**
      * POST /api/auth/login
      * Issue Sanctum token for MSIT Home Builder.
      */
@@ -544,7 +768,7 @@ if (in_array($role, [
             ], 401);
         }
 
-        if (isset($user->status) && $user->status !== 'active') {
+        if ($this->isUserInactive($user)) {
             $this->activityLog(
                 $request,
                 'login_blocked',
@@ -552,8 +776,8 @@ if (in_array($role, [
                 'users',
                 (int)$user->id,
                 ['status'],
-                ['status' => (string)($user->status ?? '')],
-                ['status' => (string)($user->status ?? '')],
+                ['status' => $this->currentUserStatus($user)],
+                ['status' => $this->currentUserStatus($user)],
                 'Account is not active',
                 ['id' => (int)$user->id, 'role' => (string)($user->role ?? null)]
             );
@@ -620,7 +844,7 @@ if (in_array($role, [
             'success'    => true,
             'token'      => $plainToken,
             'token_type' => 'Bearer',
-            'user'       => $fresh,
+            'user'       => $this->presentUser($fresh),
         ]);
     }
 
@@ -744,7 +968,7 @@ if (in_array($role, [
             ], 404);
         }
 
-        if (isset($user->status) && $user->status !== 'active') {
+        if ($this->isUserInactive($user)) {
             return response()->json([
                 'success' => false,
                 'error'   => 'Account is not active',
@@ -761,7 +985,7 @@ if (in_array($role, [
 
         return response()->json([
             'success' => true,
-            'user'    => $user,
+            'user'    => $this->presentUser($user),
         ]);
     }
 
@@ -790,6 +1014,7 @@ if (in_array($role, [
         $search = trim((string) $request->query('q', ''));
         $role   = $request->query('role');
         $status = $request->query('status');
+        $trash  = filter_var($request->query('trash', false), FILTER_VALIDATE_BOOLEAN);
 
         $hasNameShort = Schema::hasColumn('users', 'name_short_form');
         $hasEmpId     = Schema::hasColumn('users', 'employee_id');
@@ -806,8 +1031,16 @@ if (in_array($role, [
             $query->where('role', $role);
         }
 
-        if ($status && $status !== 'all') {
-            $query->where('status', $status);
+        if ($this->userHasColumn('deleted_at')) {
+            if ($trash) {
+                $query->whereNotNull('deleted_at');
+            } else {
+                $query->whereNull('deleted_at');
+            }
+        }
+
+        if (!$trash) {
+            $this->applyUserStatusFilter($query, $status);
         }
 
         if ($search !== '') {
@@ -821,14 +1054,15 @@ if (in_array($role, [
             });
         }
 
-        $users = $query
-            ->orderBy('id', 'desc')
-            ->limit(200)
-            ->get();
+        $cacheKey = $this->usersIndexCacheKey([$ac, $search, $role, $status, $trash]);
+
+        $users = Cache::remember($cacheKey, 60, function () use ($query) {
+            return $query->orderBy('id', 'desc')->limit(200)->get();
+        });
 
         return response()->json([
             'success' => true,
-            'data'    => $users,
+            'data'    => $this->presentUsers($users),
         ]);
     }
 
@@ -934,7 +1168,7 @@ if (in_array($role, [
                 'address'                  => $data['address']                  ?? null,
                 'role'                     => $role,
                 'role_short_form'          => $roleShort,
-                'status'                   => $data['status']                   ?? 'active',
+                'status'                   => $this->userStatusStorageValue($data['status'] ?? 'active'),
                 'metadata'                 => array_key_exists('metadata', $data)
                     ? json_encode($data['metadata'])
                     : null,
@@ -959,6 +1193,7 @@ if (in_array($role, [
             }
 
             DB::commit();
+            $this->invalidateUsersIndexCache();
 
             $this->logWithActor('msit.users.store.success', $request, ['user_id' => $id]);
 
@@ -987,7 +1222,7 @@ if (in_array($role, [
 
             return response()->json([
                 'success' => true,
-                'data'    => $user,
+                'data'    => $this->presentUser($user),
             ], 201);
 
         } catch (\Throwable $e) {
@@ -1034,9 +1269,9 @@ if (in_array($role, [
         }
 
         $q = DB::table('users')
-            ->select($this->userSelectColumns())
-            ->where('uuid', $uuid)
-            ->whereNull('deleted_at');
+            ->select($this->userSelectColumns());
+
+        $this->applyUserIdentifierScope($q, $uuid);
 
         if ($ac['mode'] === 'department') {
             $q->where('department_id', (int)$ac['department_id']);
@@ -1053,7 +1288,7 @@ if (in_array($role, [
 
         return response()->json([
             'success' => true,
-            'data'    => $user,
+            'data'    => $this->presentUser($user),
         ]);
     }
 
@@ -1073,17 +1308,7 @@ if (in_array($role, [
         }
 
         $qUser = DB::table('users');
-        
-        if (Schema::hasColumn('users', 'uuid')) {
-            $qUser->where('uuid', $uuid);
-        } else {
-            // Fallback: if uuid doesn't exist, the parameter is actually the ID
-            $qUser->where('id', $uuid);
-        }
-
-        if (Schema::hasColumn('users', 'deleted_at')) {
-            $qUser->whereNull('deleted_at');
-        }
+        $this->applyUserIdentifierScope($qUser, $uuid);
 
         if ($ac['mode'] === 'department') {
             $qUser->where('department_id', (int)$ac['department_id']);
@@ -1237,7 +1462,18 @@ if (in_array($role, [
         }
 
         if (array_key_exists('status', $data)) {
-            $update['status'] = $data['status'] ?? 'active';
+            if (!$this->applyUserStatusUpdate($update, $data['status'] ?? 'active', $now)) {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'User activation status is not supported by the current schema',
+                ], 422);
+            }
+
+            if ($this->userHasColumn('deleted_at')) {
+                $update['deleted_at'] = $this->normalizeUserStatus($data['status'] ?? 'active') === 'active'
+                    ? null
+                    : ($update['deleted_at'] ?? $user->deleted_at ?? null);
+            }
         }
 
         if (array_key_exists('metadata', $data)) {
@@ -1278,6 +1514,7 @@ if (in_array($role, [
             }
 
             DB::commit();
+            $this->invalidateUsersIndexCache();
 
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -1328,7 +1565,7 @@ if (in_array($role, [
 
         return response()->json([
             'success' => true,
-            'data'    => $fresh,
+            'data'    => $this->presentUser($fresh),
         ]);
     }
 
@@ -1591,9 +1828,8 @@ if (in_array($role, [
             return response()->json(['error' => 'Not allowed'], 403);
         }
 
-        $qUser = DB::table('users')
-            ->where('uuid', $uuid)
-            ->whereNull('deleted_at');
+        $qUser = DB::table('users');
+        $this->applyUserIdentifierScope($qUser, $uuid);
 
         if ($ac['mode'] === 'department') {
             $qUser->where('department_id', (int)$ac['department_id']);
@@ -1631,13 +1867,35 @@ if (in_array($role, [
             ], 422);
         }
 
-        $oldStatus = (string)($user->status ?? '');
+        $oldStatus = $this->currentUserStatus($user);
+        $updates = [];
+        $now = Carbon::now();
+
+        if ($this->userHasColumn('status')) {
+            $updates['status'] = 'inactive';
+        }
+
+        if ($this->userHasColumn('deleted_at')) {
+            $updates['deleted_at'] = $now;
+        } elseif (empty($updates) && $this->userUsesDeletedAtStatusFallback()) {
+            $updates['deleted_at'] = $now;
+        }
+
+        if (empty($updates)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'User activation status is not supported by the current schema',
+            ], 422);
+        }
+
+        if ($this->userHasColumn('updated_at')) {
+            $updates['updated_at'] = $now;
+        }
 
         DB::table('users')
             ->where('id', $user->id)
-            ->update([
-                'status'     => 'inactive',
-            ]);
+            ->update($updates);
+        $this->invalidateUsersIndexCache();
 
         $this->logWithActor('msit.users.destroy', $request, [
             'user_id' => $user->id,
@@ -1663,6 +1921,92 @@ if (in_array($role, [
     }
 
     /**
+     * DELETE /api/users/{uuid}/force
+     * Permanently delete a soft-deleted user.
+     */
+    public function forceDestroy(Request $request, string $uuid)
+    {
+        $actorId = (int) $request->attributes->get('auth_tokenable_id');
+        $ac      = $this->accessControl($actorId);
+
+        if ($ac['mode'] === 'not_allowed' || $ac['mode'] === 'none') {
+            $this->activityLog($request, 'force_delete_denied', 'users', 'users', null, null, null, null, 'Not allowed');
+            return response()->json(['error' => 'Not allowed'], 403);
+        }
+
+        $qUser = DB::table('users');
+        $this->applyUserIdentifierScope($qUser, $uuid);
+
+        if ($ac['mode'] === 'department') {
+            $qUser->where('department_id', (int) $ac['department_id']);
+        }
+
+        $user = $qUser->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'User not found',
+            ], 404);
+        }
+
+        $actor = $this->actor($request);
+        if ($actor['id'] === (int) $user->id) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'You cannot delete your own account',
+            ], 422);
+        }
+
+        if ($this->userHasColumn('deleted_at') && empty($user->deleted_at)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'User must be moved to trash before permanent deletion',
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            DB::table('personal_access_tokens')
+                ->where('tokenable_type', self::USER_TYPE)
+                ->where('tokenable_id', $user->id)
+                ->delete();
+
+            DB::table('users')
+                ->where('id', $user->id)
+                ->delete();
+
+            DB::commit();
+            $this->invalidateUsersIndexCache();
+
+            $this->activityLog(
+                $request,
+                'force_delete',
+                'users',
+                'users',
+                (int) $user->id,
+                ['deleted_at'],
+                ['deleted_at' => $user->deleted_at ?? null],
+                null,
+                'User permanently deleted'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User permanently deleted',
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'error'   => 'Failed to permanently delete user',
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/me
      * View logged-in user's own profile
      */
@@ -1679,7 +2023,6 @@ if (in_array($role, [
         $user = DB::table('users')
             ->select($this->userSelectColumns())
             ->where('id', $actor['id'])
-            ->whereNull('deleted_at')
             ->first();
 
         if (!$user) {
@@ -1691,7 +2034,7 @@ if (in_array($role, [
 
         return response()->json([
             'success' => true,
-            'data'    => $user,
+            'data'    => $this->presentUser($user),
         ]);
     }
 
@@ -1988,7 +2331,7 @@ if (in_array($role, [
             ->leftJoin('user_personal_information as upi', 'upi.user_id', '=', 'u.id')
             ->whereNull('u.deleted_at')
             ->whereNotIn('u.role', $excludedRoles)
-            ->where('u.status', $status)
+            ->where('u.status', $this->userStatusStorageValue($status))
             ->where(function ($w) {
                 $w->whereNull('upi.id')->orWhereNull('upi.deleted_at');
             });
@@ -2274,7 +2617,7 @@ if (in_array($role, [
         $base = DB::table('users as u')
             ->leftJoin('user_personal_information as upi', 'upi.user_id', '=', 'u.id')
             ->whereNull('u.deleted_at')
-            ->where('u.status', $status)
+            ->where('u.status', $this->userStatusStorageValue($status))
             ->where(function ($w) use ($placementRoles) {
                 $w->whereIn('u.role', $placementRoles)
                   ->orWhere('u.role_short_form', 'TPO');
@@ -2832,7 +3175,7 @@ if (in_array($role, [
                             'email'           => $email,
                             'role'            => $role,
                             'role_short_form' => $short,
-                            'status'          => $status,
+                            'status'          => $this->userStatusStorageValue($status),
                             'slug'            => $newSlug ?: $existing->slug,
                             'uuid'            => $existing->uuid ?: $uuid,
                             'updated_at'      => $now,
@@ -2877,7 +3220,7 @@ if (in_array($role, [
                             'password'        => Hash::make($finalPassword),
                             'role'            => $role,
                             'role_short_form' => $short,
-                            'status'          => $status,
+                            'status'          => $this->userStatusStorageValue($status),
                             'created_at'      => $now,
                             'updated_at'      => $now,
                         ];

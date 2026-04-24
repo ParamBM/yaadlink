@@ -45,7 +45,6 @@ export default function DashboardShell({ children }) {
             }
         } catch (_) { /* swallow */ } finally {
             sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
             dispatch(logout());
             navigate('/login');
         }

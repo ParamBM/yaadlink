@@ -1,40 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchPublicOccasionTypes } from '../store/slices/occasionTypesSlice';
 
 export default function Onboarding() {
-    const [selectedCelebrating, setSelectedCelebrating] = useState('wedding');
+    const dispatch = useDispatch();
+    const { publicItems } = useSelector((state) => state.occasionTypes);
+    const [selectedCelebrating, setSelectedCelebrating] = useState('');
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
         setIsVisible(true);
-    }, []);
+        dispatch(fetchPublicOccasionTypes());
+    }, [dispatch]);
 
-    const options = [
-        {
-            id: 'wedding',
-            icon: 'favorite',
-            title: 'Wedding',
-            description: 'A beautiful beginning to your forever.'
-        },
-        {
-            id: 'birthday',
-            icon: 'cake',
-            title: 'Birthday',
-            description: 'Another year of wonderful memories.'
-        },
-        {
-            id: 'anniversary',
-            icon: 'volunteer_activism',
-            title: 'Anniversary',
-            description: 'Celebrating milestones of love.'
-        },
-        {
-            id: 'memory',
-            icon: 'auto_awesome',
-            title: 'Special Memory',
-            description: 'A moment worth preserving forever.'
+    const options = useMemo(() => (
+        publicItems.map((item) => ({
+            id: String(item.slug || item.uuid || item.id),
+            icon: item.icon || 'celebration',
+            title: item.name || 'Occasion',
+            description: item.description || 'A moment worth preserving forever.',
+        }))
+    ), [publicItems]);
+
+    useEffect(() => {
+        if (!selectedCelebrating && options.length > 0) {
+            setSelectedCelebrating(options[0].id);
         }
-    ];
+    }, [options, selectedCelebrating]);
 
     return (
         <div className="bg-surface text-on-surface antialiased min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

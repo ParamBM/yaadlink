@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
     fetchOccasionTypes,
@@ -12,9 +13,27 @@ import {
 const ICON_OPTIONS = [
     'celebration', 'cake', 'favorite', 'redeem', 'auto_stories',
     'volunteer_activism', 'handshake', 'family_restroom', 'school',
-    'church', 'nightlife', 'star', 'emoji_events', 'card_giftcard',
+    'church', 'nightlife', 'star', 'auto_awesome', 'emoji_events', 'card_giftcard',
     'event', 'local_activity', 'flight_takeoff', 'home', 'business_center',
 ];
+
+function reorderOccasionTypes(list, sourceId, targetId) {
+    const sourceIndex = list.findIndex((item) => String(item?.id) === String(sourceId));
+    const targetIndex = list.findIndex((item) => String(item?.id) === String(targetId));
+
+    if (sourceIndex === -1 || targetIndex === -1 || sourceIndex === targetIndex) {
+        return list;
+    }
+
+    const next = [...list];
+    const [moved] = next.splice(sourceIndex, 1);
+    next.splice(targetIndex, 0, moved);
+
+    return next.map((item, index) => ({
+        ...item,
+        sort_order: index,
+    }));
+}
 
 // ─── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ active }) {
@@ -70,6 +89,7 @@ function EmptyState({ onAdd }) {
 // ─── Create/Edit Modal ────────────────────────────────────────────────────────
 function OccasionModal({ initialData, onClose, onSubmit, submitting, serverError }) {
     const isEdit = !!initialData;
+    const [isVisible, setIsVisible] = useState(false);
     const [form, setForm] = useState({
         name: initialData?.name ?? '',
         description: initialData?.description ?? '',
@@ -80,11 +100,39 @@ function OccasionModal({ initialData, onClose, onSubmit, submitting, serverError
 
     const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
+    useEffect(() => {
+        setIsVisible(true);
+    }, []);
+
+    useEffect(() => {
+        setForm({
+            name: initialData?.name ?? '',
+            description: initialData?.description ?? '',
+            icon: initialData?.icon ?? 'celebration',
+            is_active: initialData?.is_active ?? true,
+            sort_order: initialData?.sort_order ?? 0,
+        });
+    }, [initialData]);
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        onSubmit({
+            name: String(form.name || '').trim(),
+            description: String(form.description || '').trim(),
+            icon: form.icon || 'celebration',
+            is_active: !!form.is_active,
+            sort_order: Number(form.sort_order) || 0,
+        });
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+            <div
+                className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                onClick={onClose}
+            />
 
-            <div className="relative w-full max-w-md bg-surface-container-lowest dark:bg-stone-900 rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] dark:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] border border-outline-variant/20 dark:border-stone-700/50 overflow-hidden">
+            <div className={`relative w-full max-w-md bg-surface-container-lowest dark:bg-stone-900 rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] dark:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)] border border-outline-variant/20 dark:border-stone-700/50 overflow-hidden transition-all duration-300 transform ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0'}`}>
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-7 py-5 border-b border-outline-variant/15 dark:border-stone-700/50">
@@ -97,7 +145,7 @@ function OccasionModal({ initialData, onClose, onSubmit, submitting, serverError
                 </div>
 
                 {/* Body */}
-                <form onSubmit={e => { e.preventDefault(); onSubmit(form); }} className="px-7 py-6 flex flex-col gap-4">
+                <form onSubmit={handleSubmit} className="px-7 py-6 flex flex-col gap-4">
                     {serverError && (
                         <div className="flex items-start gap-2 bg-error-container/30 dark:bg-error-container/20 border border-error/20 rounded-2xl px-4 py-3 text-xs text-error dark:text-red-400">
                             <span className="material-symbols-outlined flex-shrink-0 mt-0.5" style={{ fontSize: '1rem' }}>error</span>
@@ -212,10 +260,19 @@ function OccasionModal({ initialData, onClose, onSubmit, submitting, serverError
 
 // ─── Delete Dialog ─────────────────────────────────────────────────────────────
 function DeleteDialog({ item, onClose, onConfirm, submitting }) {
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        setIsVisible(true);
+    }, []);
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-sm bg-surface-container-lowest dark:bg-stone-900 border border-outline-variant/20 dark:border-stone-700/50 rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] p-7 text-center">
+            <div
+                className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+                onClick={onClose}
+            />
+            <div className={`relative w-full max-w-sm bg-surface-container-lowest dark:bg-stone-900 border border-outline-variant/20 dark:border-stone-700/50 rounded-[2rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] p-7 text-center transition-all duration-300 transform ${isVisible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0'}`}>
                 <div className="w-14 h-14 rounded-full bg-error-container/30 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
                     <span className="material-symbols-outlined text-error dark:text-red-400" style={{ fontSize: '1.5rem' }}>delete</span>
                 </div>
@@ -236,36 +293,232 @@ function DeleteDialog({ item, onClose, onConfirm, submitting }) {
     );
 }
 
+function OccasionActionsMenu({ item, busy, onEdit, onDelete }) {
+    const buttonRef = useRef(null);
+    const [open, setOpen] = useState(false);
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+
+    useEffect(() => {
+        if (!open) {
+            return undefined;
+        }
+
+        const updatePosition = () => {
+            const rect = buttonRef.current?.getBoundingClientRect();
+            if (!rect) {
+                return;
+            }
+
+            const width = 190;
+            const height = 112;
+            const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
+            const top = rect.bottom + height > window.innerHeight
+                ? Math.max(12, rect.top - height - 8)
+                : rect.bottom + 8;
+
+            setPosition({ top, left });
+        };
+
+        const closeOnEscape = (event) => {
+            if (event.key === 'Escape') {
+                setOpen(false);
+            }
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        window.addEventListener('keydown', closeOnEscape);
+
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+            window.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [open]);
+
+    const menu = open && typeof document !== 'undefined'
+        ? createPortal(
+            <>
+                <button
+                    type="button"
+                    aria-label="Close occasion menu"
+                    onClick={() => setOpen(false)}
+                    className="fixed inset-0 z-50 bg-transparent"
+                />
+                <div
+                    className="fixed z-[60] w-[190px] rounded-[1rem] border border-outline-variant/20 bg-surface-container-lowest p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.16)] dark:border-stone-700/60 dark:bg-stone-900"
+                    style={{ top: `${position.top}px`, left: `${position.left}px` }}
+                >
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOpen(false);
+                            onEdit(item);
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-[0.85rem] px-3 py-2.5 text-left text-sm font-medium text-on-surface transition-colors hover:bg-surface-container dark:text-white dark:hover:bg-stone-800"
+                    >
+                        <span className="material-symbols-outlined text-[18px] text-primary">edit</span>
+                        Edit occasion
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOpen(false);
+                            onDelete(item);
+                        }}
+                        disabled={busy}
+                        className="flex w-full items-center gap-2.5 rounded-[0.85rem] px-3 py-2.5 text-left text-sm font-medium text-error transition-colors hover:bg-error-container/40 disabled:opacity-60 dark:text-red-300 dark:hover:bg-red-950/40"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                        Delete occasion
+                    </button>
+                </div>
+            </>,
+            document.body
+        )
+        : null;
+
+    return (
+        <>
+            <button
+                ref={buttonRef}
+                type="button"
+                aria-haspopup="menu"
+                aria-expanded={open}
+                onClick={() => setOpen((current) => !current)}
+                disabled={busy}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-outline-variant/20 bg-surface-container text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface disabled:opacity-60 dark:border-stone-700/60 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-white"
+            >
+                {busy ? (
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/25 border-t-current" />
+                ) : (
+                    <span className="material-symbols-outlined text-[18px]">more_horiz</span>
+                )}
+            </button>
+            {menu}
+        </>
+    );
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function OccasionTypes() {
     const dispatch = useDispatch();
     const { items, loading, submitting, error } = useSelector(s => s.occasionTypes);
 
+    const [orderedItems, setOrderedItems] = useState([]);
     const [modal, setModal] = useState(null);       // null | 'create' | item object
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [pendingId, setPendingId] = useState(null);
+    const [draggedId, setDraggedId] = useState(null);
+    const [dragOverId, setDragOverId] = useState(null);
+    const [isReordering, setIsReordering] = useState(false);
     const [search, setSearch] = useState('');
     const [filterActive, setFilterActive] = useState('all');
 
     useEffect(() => { dispatch(fetchOccasionTypes()); }, [dispatch]);
 
-    const filtered = items
-        .filter(it => filterActive === 'all' ? true : filterActive === 'active' ? it.is_active : !it.is_active)
-        .filter(it => it.name.toLowerCase().includes(search.toLowerCase()));
+    useEffect(() => {
+        if (!isReordering) {
+            setOrderedItems(items);
+        }
+    }, [items, isReordering]);
+
+    const filtered = orderedItems
+        .filter(Boolean)
+        .filter((it) => filterActive === 'all' ? true : filterActive === 'active' ? !!it?.is_active : !it?.is_active)
+        .filter((it) => String(it?.name || '').toLowerCase().includes(search.toLowerCase()));
 
     const openCreate = () => { dispatch(clearError()); setModal('create'); };
     const openEdit = (item) => { dispatch(clearError()); setModal(item); };
 
     const handleCreate = async (data) => {
+        setPendingId('create');
         const res = await dispatch(createOccasionType(data));
+        setPendingId(null);
         if (!res.error) setModal(null);
     };
     const handleUpdate = async (data) => {
+        if (!modal || modal === 'create') {
+            return;
+        }
+
+        setPendingId(modal.id);
         const res = await dispatch(updateOccasionType({ id: modal.id, payload: data }));
+        setPendingId(null);
         if (!res.error) setModal(null);
     };
     const handleDelete = async () => {
+        if (!deleteTarget) {
+            return;
+        }
+
+        setPendingId(deleteTarget.id);
         const res = await dispatch(deleteOccasionType(deleteTarget.id));
+        setPendingId(null);
         if (!res.error) setDeleteTarget(null);
+    };
+
+    const handleDragStart = (event, itemId) => {
+        setDraggedId(itemId);
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(itemId));
+    };
+
+    const handleDragOver = (event, itemId) => {
+        if (!draggedId || String(draggedId) === String(itemId)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        setDragOverId(itemId);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedId(null);
+        setDragOverId(null);
+    };
+
+    const handleDrop = async (event, targetId) => {
+        event.preventDefault();
+
+        const sourceId = draggedId || event.dataTransfer.getData('text/plain');
+        if (!sourceId || String(sourceId) === String(targetId)) {
+            handleDragEnd();
+            return;
+        }
+
+        const nextItems = reorderOccasionTypes(orderedItems, sourceId, targetId);
+        if (nextItems === orderedItems) {
+            handleDragEnd();
+            return;
+        }
+
+        const changedItems = nextItems.filter((item) => {
+            const previous = orderedItems.find((current) => String(current?.id) === String(item?.id));
+            return Number(previous?.sort_order ?? 0) !== Number(item?.sort_order ?? 0);
+        });
+
+        setOrderedItems(nextItems);
+        handleDragEnd();
+        setIsReordering(true);
+        setPendingId('sort');
+
+        for (const item of changedItems) {
+            const result = await dispatch(updateOccasionType({
+                id: item.id,
+                payload: { sort_order: Number(item.sort_order) || 0 },
+            }));
+
+            if (updateOccasionType.rejected.match(result)) {
+                break;
+            }
+        }
+
+        await dispatch(fetchOccasionTypes());
+        setPendingId(null);
+        setIsReordering(false);
     };
 
     return (
@@ -345,8 +598,8 @@ export default function OccasionTypes() {
                                 <tr className="text-on-surface-variant dark:text-stone-400 font-headline text-xs uppercase tracking-wider border-b border-outline-variant/20 dark:border-stone-700">
                                     <th className="pb-4 font-semibold w-12 px-3">ID</th>
                                     <th className="pb-4 font-semibold px-3">Name</th>
-                                    <th className="pb-4 font-semibold px-3 hidden sm:table-cell">Slug</th>
-                                    <th className="pb-4 font-semibold px-3 hidden lg:table-cell">Description</th>
+                                    <th className="pb-4 font-semibold px-3">Slug</th>
+                                    <th className="pb-4 font-semibold px-3">Description</th>
                                     <th className="pb-4 font-semibold px-3 text-center w-28">Status</th>
                                     <th className="pb-4 font-semibold px-3 text-right w-20">Actions</th>
                                 </tr>
@@ -361,7 +614,13 @@ export default function OccasionTypes() {
                                 ) : filtered.map((item, idx) => (
                                     <tr
                                         key={item.id}
-                                        className="group hover:bg-surface-container-low/50 dark:hover:bg-stone-800/50 transition-colors duration-300"
+                                        onDragOver={(event) => handleDragOver(event, item.id)}
+                                        onDrop={(event) => handleDrop(event, item.id)}
+                                        className={`group transition-colors duration-300 ${
+                                            dragOverId === item.id
+                                                ? 'bg-surface-container-low dark:bg-stone-800/60'
+                                                : 'hover:bg-surface-container-low/50 dark:hover:bg-stone-800/50'
+                                        }`}
                                     >
                                         <td className="py-4 px-3 text-sm text-on-surface-variant dark:text-stone-500">
                                             {String(idx + 1).padStart(2, '0')}
@@ -374,31 +633,34 @@ export default function OccasionTypes() {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-3 hidden sm:table-cell text-sm text-on-surface-variant dark:text-stone-400">
+                                        <td className="py-4 px-3 text-sm text-on-surface-variant dark:text-stone-400">
                                             {item.slug}
                                         </td>
-                                        <td className="py-4 px-3 hidden lg:table-cell text-sm text-on-surface-variant dark:text-stone-400 truncate max-w-xs">
+                                        <td className="py-4 px-3 text-sm text-on-surface-variant dark:text-stone-400 max-w-[14rem] sm:max-w-xs truncate">
                                             {item.description || <span className="italic text-on-surface-variant/40 dark:text-stone-600">—</span>}
                                         </td>
                                         <td className="py-4 px-3 text-center">
                                             <StatusBadge active={item.is_active} />
                                         </td>
                                         <td className="py-4 px-3 text-right">
-                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center justify-end gap-2">
                                                 <button
-                                                    onClick={() => openEdit(item)}
-                                                    aria-label="Edit"
-                                                    className="p-2 rounded-full hover:bg-surface-variant dark:hover:bg-stone-700 text-on-surface-variant dark:text-stone-400 hover:text-on-surface dark:hover:text-white transition-colors"
+                                                    type="button"
+                                                    draggable
+                                                    onDragStart={(event) => handleDragStart(event, item.id)}
+                                                    onDragEnd={handleDragEnd}
+                                                    disabled={pendingId === 'sort'}
+                                                    title="Drag to reorder"
+                                                    className="inline-flex h-9 w-9 cursor-grab items-center justify-center rounded-full border border-outline-variant/20 bg-surface-container text-on-surface-variant transition-colors hover:bg-surface-container-low hover:text-on-surface active:cursor-grabbing disabled:opacity-40 dark:border-stone-700/60 dark:bg-stone-800 dark:text-stone-300 dark:hover:bg-stone-700 dark:hover:text-white"
                                                 >
-                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>edit</span>
+                                                    <span className="material-symbols-outlined text-[18px]">drag_indicator</span>
                                                 </button>
-                                                <button
-                                                    onClick={() => setDeleteTarget(item)}
-                                                    aria-label="Delete"
-                                                    className="p-2 rounded-full hover:bg-error-container dark:hover:bg-red-900/30 text-error dark:text-red-400 transition-colors"
-                                                >
-                                                    <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>delete</span>
-                                                </button>
+                                                <OccasionActionsMenu
+                                                    item={item}
+                                                    busy={pendingId === item.id || pendingId === 'sort'}
+                                                    onEdit={openEdit}
+                                                    onDelete={setDeleteTarget}
+                                                />
                                             </div>
                                         </td>
                                     </tr>
@@ -410,28 +672,21 @@ export default function OccasionTypes() {
                     {/* Footer */}
                     <div className="mt-5 flex items-center justify-between border-t border-outline-variant/15 dark:border-stone-700/50 pt-5">
                         <span className="text-sm text-on-surface-variant dark:text-stone-400 font-body">
-                            Showing {filtered.length} of {items.length} entries
+                            Showing {filtered.length} of {orderedItems.length} entries
                         </span>
-                        <button
-                            onClick={openCreate}
-                            className="text-sm text-primary dark:text-red-400 font-semibold hover:underline font-headline flex items-center gap-1"
-                        >
-                            <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>add</span>
-                            Add New
-                        </button>
                     </div>
                 </div>
             )}
 
             {/* Modals */}
             {modal === 'create' && (
-                <OccasionModal onClose={() => setModal(null)} onSubmit={handleCreate} submitting={submitting} serverError={error} />
+                <OccasionModal onClose={() => setModal(null)} onSubmit={handleCreate} submitting={submitting && pendingId === 'create'} serverError={error} />
             )}
             {modal && modal !== 'create' && (
-                <OccasionModal initialData={modal} onClose={() => setModal(null)} onSubmit={handleUpdate} submitting={submitting} serverError={error} />
+                <OccasionModal initialData={modal} onClose={() => setModal(null)} onSubmit={handleUpdate} submitting={submitting && pendingId === modal.id} serverError={error} />
             )}
             {deleteTarget && (
-                <DeleteDialog item={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} submitting={submitting} />
+                <DeleteDialog item={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} submitting={submitting && pendingId === deleteTarget.id} />
             )}
         </div>
     );

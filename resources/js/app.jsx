@@ -8,8 +8,9 @@ import store from './store';
 import Layout from './components/Layout';
 import Welcome from './pages/welcome';
 import Onboarding from './pages/Onboarding';
-import Login from './pages/Login';
-import OAuthCallback from './pages/OAuthCallback';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import OAuthCallback from './pages/auth/OAuthCallback';
 import DashboardLayout from './layouts/DashboardLayout';
 
 // Dashboard pages
@@ -17,6 +18,8 @@ import Analytics from './pages/Analytics';
 import Users from './pages/Users';
 import ActivityLogs from './pages/ActivityLogs';
 import OccasionTypes from './pages/OccasionTypes';
+import Themes from './pages/Themes';
+import Stories from './pages/Stories';
 
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -43,6 +46,7 @@ function AppContent() {
                 {/* Standalone routes */}
                 <Route path="/onboarding"      element={<Onboarding />} />
                 <Route path="/login"           element={<Login />} />
+                <Route path="/register"        element={<Register />} />
                 <Route path="/oauth/callback"  element={<OAuthCallback />} />
 
                 {/* Dashboard — /dashboard → /dashboard/analytics */}
@@ -52,6 +56,8 @@ function AppContent() {
                     <Route path="/dashboard/users"              element={<Users />} />
                     <Route path="/dashboard/activity-logs"      element={<ActivityLogs />} />
                     <Route path="/dashboard/occasion-types"     element={<OccasionTypes />} />
+                    <Route path="/dashboard/themes"             element={<Themes />} />
+                    <Route path="/dashboard/stories"            element={<Stories />} />
                 </Route>
             </Routes>
         </BrowserRouter>

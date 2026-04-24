@@ -1,0 +1,71 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+// Async thunk for uploading an image
+export const uploadImage = createAsyncThunk(
+    'upload/uploadImage',
+    async (file, { getState, rejectWithValue }) => {
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const token = sessionStorage.getItem('token');
+            const response = await axios.post('/api/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.data.success) {
+                // Generate a unique signature for this file to cache it
+                const fileSignature = `${file.name}-${file.size}-${file.lastModified}`;
+                return { signature: fileSignature, url: response.data.url };
+            } else {
+                return rejectWithValue(response.data.error || 'Upload failed.');
+            }
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || 
+                error.response?.data?.error || 
+                'Failed to upload image.'
+            );
+        }
+    }
+);
+
+const uploadSlice = createSlice({
+    name: 'upload',
+    initialState: {
+        isUploading: false,
+        error: null,
+        // Cache object mapping file signatures to uploaded URLs
+        cachedUploads: {}
+    },
+    reducers: {
+        clearUploadError: (state) => {
+            state.error = null;
+        }
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(uploadImage.pending, (state) => {
+                state.isUploading = true;
+                state.error = null;
+            })
+            .addCase(uploadImage.fulfilled, (state, action) => {
+                state.isUploading = false;
+                state.error = null;
+                // Save to cache
+                state.cachedUploads[action.payload.signature] = action.payload.url;
+            })
+            .addCase(uploadImage.rejected, (state, action) => {
+                state.isUploading = false;
+                state.error = action.payload;
+            });
+    }
+});
+
+export const { clearUploadError } = uploadSlice.actions;
+export default uploadSlice.reducer;

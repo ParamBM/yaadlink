@@ -10,10 +10,47 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Services\UserActivityLogger;
 
 class SocialAuthController extends Controller
 {
     private const USER_TYPE = 'App\\Models\\User';
+
+    private function isInactiveStatus($status): bool
+    {
+        if ($status === null || $status === '') {
+            return false;
+        }
+
+        if (is_bool($status)) {
+            return $status === false;
+        }
+
+        if (is_int($status) || is_float($status)) {
+            return ((int) $status) === 0;
+        }
+
+        $normalized = strtolower(trim((string) $status));
+        return in_array($normalized, ['0', 'false', 'inactive', 'disabled'], true);
+    }
+
+    private function generateUniqueSlug(string $name): string
+    {
+        $base = Str::slug($name);
+        if ($base === '') {
+            $base = 'google-user';
+        }
+
+        $slug = $base;
+        $count = 1;
+
+        while (DB::table('users')->where('slug', $slug)->exists()) {
+            $slug = $base . '-' . $count;
+            $count++;
+        }
+
+        return $slug;
+    }
 
     public function redirect()
     {
@@ -36,10 +73,11 @@ class SocialAuthController extends Controller
                     // Update existing user with Google ID
                     DB::table('users')->where('id', $user->id)->update([
                         'google_id' => $googleUser->getId(),
+                        'updated_at' => Carbon::now(),
                     ]);
                 } else {
                     // Create new user
-                    $userId = DB::table('users')->insertGetId([
+                    $insert = [
                         'name' => $googleUser->getName() ?? 'Google User',
                         'email' => $googleUser->getEmail(),
                         'password' => Hash::make(Str::random(24)), // Generate random secure password
@@ -47,13 +85,44 @@ class SocialAuthController extends Controller
                         'role' => 'user',
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now(),
-                    ]);
+                    ];
+
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'uuid')) {
+                        $insert['uuid'] = (string) Str::uuid();
+                    }
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'slug')) {
+                        $insert['slug'] = $this->generateUniqueSlug($googleUser->getName() ?? $googleUser->getEmail() ?? 'Google User');
+                    }
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'role_short_form')) {
+                        $insert['role_short_form'] = 'USR';
+                    }
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'status')) {
+                        $insert['status'] = 'active';
+                    }
+
+                    $userId = DB::table('users')->insertGetId($insert);
 
                     $user = DB::table('users')->where('id', $userId)->first();
+
+                    UserActivityLogger::log(
+                        $request,
+                        'register',
+                        'auth',
+                        'users',
+                        (int) $userId,
+                        null,
+                        null,
+                        ['email' => $user->email, 'method' => 'google'],
+                        'User registered via Google OAuth',
+                        ['id' => (int) $userId, 'role' => 'user']
+                    );
                 }
             }
 
-            if (isset($user->status) && $user->status !== 'active') {
+            $isInactive = (isset($user->status) && $this->isInactiveStatus($user->status))
+                || (!isset($user->status) && isset($user->deleted_at) && $user->deleted_at !== null);
+
+            if ($isInactive) {
                 return redirect('/login?error=Account is not active');
             }
 
@@ -81,6 +150,19 @@ class SocialAuthController extends Controller
             if (!empty($updates)) {
                 DB::table('users')->where('id', $user->id)->update($updates);
             }
+
+            UserActivityLogger::log(
+                $request,
+                'login',
+                'auth',
+                'users',
+                (int) $user->id,
+                null,
+                null,
+                ['email' => $user->email, 'method' => 'google'],
+                'Login successful via Google OAuth',
+                ['id' => (int) $user->id, 'role' => (string)($user->role ?? 'user')]
+            );
 
             // Redirect to frontend callback route with token
             return redirect('/oauth/callback?token=' . $plainToken);

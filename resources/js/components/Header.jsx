@@ -22,7 +22,6 @@ export default function Header() {
             console.error('Logout failed:', error);
         } finally {
             sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
             dispatch(logout());
             navigate('/login');
         }
