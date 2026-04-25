@@ -70,6 +70,72 @@ export default function Welcome() {
                 </div>
             </section>
 
+            <section id="more-templates" className="bg-surface py-20">
+                <div className="container mx-auto px-6">
+                    <div className="grid gap-12 sm:gap-16 lg:grid-cols-3">
+                        {/* Special Moment Frame */}
+                        <div className="relative group">
+                            <div className="relative z-10 rotate-[-1deg] overflow-hidden rounded-[2.5rem] border border-surface-container-high/40 bg-surface-container-lowest p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all duration-500 group-hover:rotate-0 group-hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)]">
+                                <img
+                                    alt="Special Moment template mockup"
+                                    className="h-[400px] w-full rounded-[2rem] object-cover"
+                                    src="/images/hero-special-moment.png"
+                                />
+                            </div>
+                            <div className="absolute -bottom-6 -right-4 z-20 flex max-w-[240px] rotate-2 items-center gap-3 rounded-2xl border border-surface-container-low bg-white/90 p-4 shadow-xl backdrop-blur-md transition-transform duration-300 group-hover:-translate-y-2">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-primary">
+                                    <span aria-hidden="true" className="material-symbols-outlined text-xl">auto_awesome</span>
+                                </div>
+                                <div>
+                                    <p className="font-headline text-sm font-bold text-on-surface">"Simply beautiful!"</p>
+                                    <p className="font-body text-xs text-on-surface-variant">Aarav, Special Moment</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Birthday Frame */}
+                        <div className="relative group lg:mt-8">
+                            <div className="relative z-10 rotate-[1deg] overflow-hidden rounded-[2.5rem] border border-surface-container-high/40 bg-surface-container-lowest p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all duration-500 group-hover:rotate-0 group-hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)]">
+                                <img
+                                    alt="Birthday template mockup"
+                                    className="h-[400px] w-full rounded-[2rem] object-cover"
+                                    src="/images/hero-birthday.png"
+                                />
+                            </div>
+                            <div className="absolute -bottom-6 -left-4 z-20 flex max-w-[240px] -rotate-2 items-center gap-3 rounded-2xl border border-surface-container-low bg-white/90 p-4 shadow-xl backdrop-blur-md transition-transform duration-300 group-hover:-translate-y-2">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary-fixed text-on-secondary-fixed">
+                                    <span aria-hidden="true" className="material-symbols-outlined text-xl">cake</span>
+                                </div>
+                                <div>
+                                    <p className="font-headline text-sm font-bold text-on-surface">"Loved the vibes!"</p>
+                                    <p className="font-body text-xs text-on-surface-variant">Ishan, 1st Birthday</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Anniversary Frame */}
+                        <div className="relative group">
+                            <div className="relative z-10 rotate-[-1deg] overflow-hidden rounded-[2.5rem] border border-surface-container-high/40 bg-surface-container-lowest p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.04)] transition-all duration-500 group-hover:rotate-0 group-hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)]">
+                                <img
+                                    alt="Anniversary template mockup"
+                                    className="h-[400px] w-full rounded-[2rem] object-cover"
+                                    src="/images/hero-anniversary.png"
+                                />
+                            </div>
+                            <div className="absolute -bottom-6 -right-4 z-20 flex max-w-[240px] rotate-2 items-center gap-3 rounded-2xl border border-surface-container-low bg-white/90 p-4 shadow-xl backdrop-blur-md transition-transform duration-300 group-hover:-translate-y-2">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-tertiary-container text-tertiary">
+                                    <span aria-hidden="true" className="material-symbols-outlined text-xl">favorite</span>
+                                </div>
+                                <div>
+                                    <p className="font-headline text-sm font-bold text-on-surface">"A timeless gift!"</p>
+                                    <p className="font-body text-xs text-on-surface-variant">Vikram &amp; Meera</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section id="features" className="bg-surface-container-low py-24">
                 <div className="container mx-auto px-6">
                     <div className="mx-auto mb-16 max-w-2xl text-center">
@@ -124,9 +190,11 @@ export default function Welcome() {
                                 "Our wedding website was the talk of the family. The traditional yet modern touch was exactly what we wanted for our big day."
                             </p>
                             <div className="flex items-center gap-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-container text-primary font-bold">
-                                    PV
-                                </div>
+                                <img
+                                    alt="Priya Verma"
+                                    className="h-12 w-12 rounded-full object-cover border-2 border-primary/10"
+                                    src="/images/profile-priya.png"
+                                />
                                 <div>
                                     <p className="font-headline font-bold text-on-surface">Priya Verma</p>
                                     <p className="font-body text-sm text-on-surface-variant">Bride-to-be</p>
@@ -146,9 +214,11 @@ export default function Welcome() {
                                 "Sach mein, itna aasaan aur sundar! Sabne pucha ki kisne banaya. Best for Indian weddings!"
                             </p>
                             <div className="flex items-center gap-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary-container text-secondary font-bold">
-                                    RK
-                                </div>
+                                <img
+                                    alt="Rahul Kapoor"
+                                    className="h-12 w-12 rounded-full object-cover border-2 border-primary/10"
+                                    src="/images/profile-rahul.png"
+                                />
                                 <div>
                                     <p className="font-headline font-bold text-on-surface">Rahul Kapoor</p>
                                     <p className="font-body text-sm text-on-surface-variant">Groom</p>
@@ -168,9 +238,11 @@ export default function Welcome() {
                                 "Created a super cool birthday page for my daughter's 1st birthday. The milestones timeline was a hit with all our relatives!"
                             </p>
                             <div className="flex items-center gap-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-tertiary-container text-tertiary font-bold">
-                                    AS
-                                </div>
+                                <img
+                                    alt="Anjali Sharma"
+                                    className="h-12 w-12 rounded-full object-cover border-2 border-primary/10"
+                                    src="/images/profile-anjali.png"
+                                />
                                 <div>
                                     <p className="font-headline font-bold text-on-surface">Anjali Sharma</p>
                                     <p className="font-body text-sm text-on-surface-variant">Mother</p>
