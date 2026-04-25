@@ -128,7 +128,7 @@ export default function Header() {
                     <div className="overflow-hidden rounded-b-[2rem] border border-outline-variant/15 bg-surface/95 shadow-[0_30px_80px_rgba(27,28,28,0.16)] backdrop-blur-xl">
                         <div className="flex items-center justify-between border-b border-outline-variant/10 px-5 py-4 sm:px-6">
                             <div>
-                                <p className="font-headline text-lg font-bold text-on-surface">Navigate YaadLink</p>
+                                <p className="font-headline text-lg font-bold text-primary">Navigate YaadLink</p>
                                 <p className="text-sm text-on-surface-variant">Quick links for stories, pages, and your dashboard.</p>
                             </div>
                             <button
