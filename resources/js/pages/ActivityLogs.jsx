@@ -56,7 +56,7 @@ export default function ActivityLogs() {
     return (
         <div className="w-full max-w-7xl mx-auto p-6 md:p-8 lg:px-12">
             <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-                <div>
+                <div className="text-center md:text-left">
                     <h1 className="mb-3 font-headline text-4xl font-extrabold tracking-tighter text-on-surface dark:text-white">
                         Activity Logs
                     </h1>

@@ -526,7 +526,7 @@ export default function OccasionTypes() {
 
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-5">
-                <div className="max-w-2xl">
+                <div className="max-w-2xl text-center md:text-left">
                     <h1 className="font-headline text-4xl font-extrabold text-on-surface dark:text-white tracking-tighter mb-3">
                         Occasion Types
                     </h1>
@@ -536,7 +536,7 @@ export default function OccasionTypes() {
                 </div>
                 <button
                     onClick={openCreate}
-                    className="shrink-0 py-3 px-7 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-sm shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] hover:scale-[1.02] active:scale-98 transition-all flex items-center gap-2 font-headline"
+                    className="hidden md:flex shrink-0 py-3 px-7 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-sm shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] hover:scale-[1.02] active:scale-98 transition-all items-center gap-2 font-headline"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
                     Add New Occasion
@@ -554,6 +554,31 @@ export default function OccasionTypes() {
                 </div>
             )}
 
+            {/* Mobile Action Row */}
+            <div className="flex md:hidden items-center justify-between gap-3 mb-6">
+                <div className="flex gap-1 bg-surface-container dark:bg-stone-800 rounded-full p-1">
+                    {['all', 'active', 'inactive'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setFilterActive(tab)}
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-bold capitalize transition-all font-label ${
+                                filterActive === tab
+                                    ? 'bg-surface-container-lowest dark:bg-stone-700 text-on-surface dark:text-white shadow-sm'
+                                    : 'text-on-surface-variant dark:text-stone-400'
+                            }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    onClick={openCreate}
+                    className="h-9 w-9 flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg active:scale-95 transition-transform"
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>add</span>
+                </button>
+            </div>
+
             {/* Search + Filter bar */}
             <div className="flex flex-wrap items-center gap-3 mb-5">
                 <div className="flex items-center gap-2 flex-1 min-w-[200px] bg-surface-container-lowest dark:bg-stone-900 border border-outline-variant/20 dark:border-stone-700/50 rounded-full px-4 py-2.5">
@@ -565,7 +590,7 @@ export default function OccasionTypes() {
                         className="flex-1 bg-transparent text-sm text-on-surface dark:text-white placeholder-on-surface-variant/50 outline-none font-body"
                     />
                 </div>
-                <div className="flex gap-1 bg-surface-container dark:bg-stone-800 rounded-full p-1">
+                <div className="hidden md:flex gap-1 bg-surface-container dark:bg-stone-800 rounded-full p-1">
                     {['all', 'active', 'inactive'].map(tab => (
                         <button
                             key={tab}

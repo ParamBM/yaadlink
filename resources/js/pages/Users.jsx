@@ -224,11 +224,11 @@ function UserModal({ mode, user, submitting, error, onClose, onSubmit }) {
             <button
                 type="button"
                 onClick={onClose}
-                className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
                 aria-label="Close user modal"
             />
 
-            <div className="relative w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-lowest shadow-[0_30px_70px_rgba(0,0,0,0.14)] dark:border-stone-700/50 dark:bg-stone-900">
+            <div className="relative w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-lowest shadow-[0_30px_70px_rgba(0,0,0,0.14)] dark:border-stone-700/50 dark:bg-stone-900 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                 <div className="flex items-center justify-between border-b border-outline-variant/15 px-5 py-4 dark:border-stone-700/50">
                     <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary dark:text-primary">
@@ -347,11 +347,11 @@ function ConfirmStatusModal({ state, submitting, onClose, onConfirm }) {
             <button
                 type="button"
                 onClick={onClose}
-                className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
                 aria-label="Close status confirmation"
             />
 
-            <div className="relative w-full max-w-sm rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-lowest p-6 shadow-[0_30px_70px_rgba(0,0,0,0.14)] dark:border-stone-700/50 dark:bg-stone-900">
+            <div className="relative w-full max-w-sm rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-lowest p-6 shadow-[0_30px_70px_rgba(0,0,0,0.14)] dark:border-stone-700/50 dark:bg-stone-900 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                 <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
                     active
                         ? 'bg-tertiary-fixed/30 text-tertiary dark:bg-tertiary/15 dark:text-tertiary-fixed'
@@ -407,11 +407,11 @@ function ConfirmDeleteModal({ state, submitting, onClose, onConfirm }) {
             <button
                 type="button"
                 onClick={onClose}
-                className="absolute inset-0 bg-black/45 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
                 aria-label="Close delete confirmation"
             />
 
-            <div className="relative w-full max-w-sm rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-lowest p-6 shadow-[0_30px_70px_rgba(0,0,0,0.14)] dark:border-stone-700/50 dark:bg-stone-900">
+            <div className="relative w-full max-w-sm rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-lowest p-6 shadow-[0_30px_70px_rgba(0,0,0,0.14)] dark:border-stone-700/50 dark:bg-stone-900 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-error-container text-error dark:bg-red-950/60 dark:text-red-300">
                     <span className="material-symbols-outlined text-[26px]">{permanent ? 'delete_forever' : 'delete'}</span>
                 </div>
@@ -502,7 +502,7 @@ function UserActionsMenu({ user, busy, inTrash, onEdit, onToggleStatus, onRecove
                     className="fixed inset-0 z-50 bg-transparent"
                 />
                 <div
-                    className="fixed z-[60] w-[190px] rounded-[1rem] border border-outline-variant/20 bg-surface-container-lowest p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.16)] dark:border-stone-700/60 dark:bg-stone-900"
+                    className="fixed z-[60] w-[190px] rounded-[1rem] border border-outline-variant/20 bg-surface-container-lowest p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.16)] dark:border-stone-700/60 dark:bg-stone-900 animate-in fade-in zoom-in-95 duration-200"
                     style={{ top: `${position.top}px`, left: `${position.left}px` }}
                 >
                     <button
@@ -781,16 +781,16 @@ export default function Users() {
     return (
         <div className="mx-auto w-full max-w-7xl p-6 md:p-8 lg:px-12">
             <div className="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-                <div>
+                <div className="text-center md:text-left">
                     <h1 className="mb-2 font-headline text-4xl font-extrabold tracking-tighter text-on-surface dark:text-white">
                         Users
                     </h1>
-                    <p className="max-w-2xl text-sm leading-relaxed text-on-surface-variant dark:text-stone-400">
+                    <p className="mx-auto md:mx-0 max-w-2xl text-sm leading-relaxed text-on-surface-variant dark:text-stone-400">
                         Manage registered accounts, roles, and access states from one place.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="hidden md:flex items-center gap-3">
                     <div className="rounded-full bg-surface-container px-4 py-2 text-sm font-semibold text-on-surface-variant dark:bg-stone-800 dark:text-stone-400">
                         {items.length} {visibleCountLabel}
                     </div>
@@ -807,7 +807,49 @@ export default function Users() {
                 </div>
             </div>
 
-            <div className="mb-5 inline-flex rounded-full border border-outline-variant/20 bg-surface-container-lowest p-1 dark:border-stone-700/50 dark:bg-stone-900">
+            <div className="mb-6 flex md:hidden items-center justify-between gap-3">
+                <div className="inline-flex rounded-full border border-outline-variant/20 bg-surface-container-lowest p-1 dark:border-stone-700/50 dark:bg-stone-900">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('active')}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                            activeTab === 'active'
+                                ? 'bg-primary text-on-primary'
+                                : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
+                        }`}
+                    >
+                        Users
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('trash')}
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                            activeTab === 'trash'
+                                ? 'bg-primary text-on-primary'
+                                : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
+                        }`}
+                    >
+                        Trash
+                    </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <div className="rounded-full bg-surface-container px-3 py-1.5 text-xs font-semibold text-on-surface-variant dark:bg-stone-800 dark:text-stone-400">
+                        {items.length} {visibleCountLabel}
+                    </div>
+                    {activeTab !== 'trash' && (
+                        <button
+                            type="button"
+                            onClick={openCreateModal}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-[0_14px_32px_-18px_rgba(183,16,42,0.55)] transition-all hover:scale-[1.01]"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">add</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="mb-5 hidden md:inline-flex rounded-full border border-outline-variant/20 bg-surface-container-lowest p-1 dark:border-stone-700/50 dark:bg-stone-900">
                 <button
                     type="button"
                     onClick={() => setActiveTab('active')}

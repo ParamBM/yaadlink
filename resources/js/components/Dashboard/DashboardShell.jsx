@@ -134,7 +134,7 @@ export default function DashboardShell({ children }) {
             <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-surface dark:bg-stone-950 relative transition-colors duration-300">
 
                 {/* Top App Bar */}
-                <header className="w-full h-16 sticky top-0 z-40 bg-surface/80 dark:bg-stone-950/80 backdrop-blur-md flex items-center justify-between px-8 border-b border-outline-variant/10 dark:border-stone-800 transition-colors duration-300">
+                <header className="w-full h-20 shrink-0 sticky top-0 z-40 bg-surface/80 dark:bg-stone-950/80 backdrop-blur-md flex items-center justify-between px-8 border-b border-outline-variant/10 dark:border-stone-800 transition-colors duration-300">
                     <img 
                         src="/branding/logo.webp" 
                         alt="Yaad Link Logo" 

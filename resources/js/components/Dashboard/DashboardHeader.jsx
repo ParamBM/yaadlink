@@ -21,7 +21,7 @@ export default function DashboardHeader() {
     const toggleDarkMode = () => setIsDark(!isDark);
 
     return (
-        <header className="w-full h-20 sticky top-0 z-40 bg-surface/80 dark:bg-stone-950/80 backdrop-blur-md flex items-center justify-between px-12 border-b border-outline-variant/10 transition-colors duration-300">
+        <header className="w-full h-20 shrink-0 sticky top-0 z-40 bg-surface/80 dark:bg-stone-950/80 backdrop-blur-md flex items-center justify-between px-12 border-b border-outline-variant/10 transition-colors duration-300">
             <h1 className="font-headline font-medium text-primary dark:text-red-400 text-xl tracking-tight hidden md:block">
                 Yaad Link
             </h1>

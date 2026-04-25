@@ -552,7 +552,7 @@ function StoryModal({
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-7 py-6">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-7 py-6">
                     {(serverError || formError) && (
                         <div className="mb-6 rounded-2xl border border-error/20 bg-error-container/30 px-4 py-3 text-xs text-error dark:bg-error-container/20 dark:text-red-400">
                             <div className="flex items-start gap-2">
@@ -667,7 +667,7 @@ function StoryModal({
                                         type="date"
                                         value={form.start_date}
                                         onChange={(event) => set('start_date', event.target.value)}
-                                        className="w-full rounded-2xl border border-outline-variant/30 bg-surface-container px-4 py-2.5 text-sm text-on-surface outline-none transition-all focus:border-primary/50 dark:border-stone-700 dark:bg-stone-800 dark:text-white dark:focus:border-red-400/50"
+                                        className="w-full max-w-full rounded-2xl border border-outline-variant/30 bg-surface-container px-4 py-2.5 text-sm text-on-surface outline-none transition-all focus:border-primary/50 dark:border-stone-700 dark:bg-stone-800 dark:text-white dark:focus:border-red-400/50"
                                     />
                                 </div>
 
@@ -1389,7 +1389,7 @@ export default function Stories() {
     return (
         <div className="mx-auto w-full max-w-7xl p-6 md:p-8 lg:px-12">
             <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-                <div className="max-w-2xl">
+                <div className="max-w-2xl text-center md:text-left">
                     <h1 className="mb-3 font-headline text-4xl font-extrabold tracking-tighter text-on-surface dark:text-white">
                         Stories
                     </h1>
@@ -1399,25 +1399,25 @@ export default function Stories() {
                 </div>
                 <button
                     onClick={openCreate}
-                    className="flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
+                    className="hidden md:flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
                 >
                     <span className="material-symbols-outlined text-[1.1rem]">add</span>
                     Add New Story
                 </button>
             </div>
 
-            <div className="mb-6 grid gap-4 md:grid-cols-3">
-                <div className="rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-5 dark:border-stone-700/50 dark:bg-stone-900">
-                    <p className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Total Stories</p>
-                    <p className="mt-3 font-headline text-3xl font-bold text-on-surface dark:text-white">{stats.total}</p>
+            <div className="mb-6 grid grid-cols-3 gap-2 md:gap-4">
+                <div className="rounded-[1.2rem] md:rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-3 md:p-5 dark:border-stone-700/50 dark:bg-stone-900 text-center md:text-left">
+                    <p className="font-label text-[10px] md:text-xs font-semibold uppercase tracking-wider text-on-surface-variant truncate">Total Stories</p>
+                    <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-on-surface dark:text-white">{stats.total}</p>
                 </div>
-                <div className="rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-5 dark:border-stone-700/50 dark:bg-stone-900">
-                    <p className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Published</p>
-                    <p className="mt-3 font-headline text-3xl font-bold text-tertiary dark:text-tertiary-fixed">{stats.published}</p>
+                <div className="rounded-[1.2rem] md:rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-3 md:p-5 dark:border-stone-700/50 dark:bg-stone-900 text-center md:text-left">
+                    <p className="font-label text-[10px] md:text-xs font-semibold uppercase tracking-wider text-on-surface-variant truncate">Published</p>
+                    <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-tertiary dark:text-tertiary-fixed">{stats.published}</p>
                 </div>
-                <div className="rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-5 dark:border-stone-700/50 dark:bg-stone-900">
-                    <p className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Pending Approval</p>
-                    <p className="mt-3 font-headline text-3xl font-bold text-secondary dark:text-secondary-fixed">{stats.pending}</p>
+                <div className="rounded-[1.2rem] md:rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-3 md:p-5 dark:border-stone-700/50 dark:bg-stone-900 text-center md:text-left">
+                    <p className="font-label text-[10px] md:text-xs font-semibold uppercase tracking-wider text-on-surface-variant truncate">Pending</p>
+                    <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-secondary dark:text-secondary-fixed">{stats.pending}</p>
                 </div>
             </div>
 
@@ -1431,6 +1431,31 @@ export default function Stories() {
                 </div>
             )}
 
+            {/* Mobile Action Row */}
+            <div className="flex md:hidden items-center justify-between gap-3 mb-6">
+                <div className="flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
+                    {['all', 'published', 'pending'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setFilterStatus(tab)}
+                            className={`rounded-full px-3 py-1.5 text-[10px] font-bold capitalize transition-all ${
+                                filterStatus === tab
+                                    ? 'bg-surface-container-lowest text-on-surface shadow-sm dark:bg-stone-700 dark:text-white'
+                                    : 'text-on-surface-variant dark:text-stone-400'
+                            }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    onClick={openCreate}
+                    className="h-9 w-9 flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg active:scale-95 transition-transform"
+                >
+                    <span className="material-symbols-outlined text-[1.2rem]">add</span>
+                </button>
+            </div>
+
             <div className="mb-5 flex flex-wrap items-center gap-3">
                 <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-full border border-outline-variant/20 bg-surface-container-lowest px-4 py-2.5 dark:border-stone-700/50 dark:bg-stone-900">
                     <span className="material-symbols-outlined text-on-surface-variant text-[1rem]">search</span>
@@ -1442,7 +1467,7 @@ export default function Stories() {
                     />
                 </div>
 
-                <div className="flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
+                <div className="hidden md:flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
                     {['all', 'published', 'pending'].map((tab) => (
                         <button
                             key={tab}

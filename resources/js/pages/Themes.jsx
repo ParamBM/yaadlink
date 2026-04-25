@@ -966,7 +966,7 @@ export default function Themes() {
     return (
         <div className="mx-auto w-full max-w-7xl p-6 md:p-8 lg:px-12">
             <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
-                <div className="max-w-2xl">
+                <div className="max-w-2xl text-center md:text-left">
                     <h1 className="mb-3 font-headline text-4xl font-extrabold tracking-tighter text-on-surface dark:text-white">
                         Themes
                     </h1>
@@ -976,7 +976,7 @@ export default function Themes() {
                 </div>
                 <button
                     onClick={openCreate}
-                    className="flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98 font-headline"
+                    className="hidden md:flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98 font-headline"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: '1.1rem' }}>add</span>
                     Add New Theme
@@ -993,6 +993,31 @@ export default function Themes() {
                 </div>
             )}
 
+            {/* Mobile Action Row */}
+            <div className="flex md:hidden items-center justify-between gap-3 mb-6">
+                <div className="flex gap-1 bg-surface-container dark:bg-stone-800 rounded-full p-1">
+                    {['all', 'active', 'inactive'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setFilterActive(tab)}
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-bold capitalize transition-all font-label ${
+                                filterActive === tab
+                                    ? 'bg-surface-container-lowest dark:bg-stone-700 text-on-surface dark:text-white shadow-sm'
+                                    : 'text-on-surface-variant dark:text-stone-400'
+                            }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    onClick={openCreate}
+                    className="h-9 w-9 flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg active:scale-95 transition-transform"
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: '1.2rem' }}>add</span>
+                </button>
+            </div>
+
             <div className="mb-5 flex flex-wrap items-center gap-3">
                 <div className="flex min-w-[200px] flex-1 items-center gap-2 rounded-full border border-outline-variant/20 bg-surface-container-lowest px-4 py-2.5 dark:border-stone-700/50 dark:bg-stone-900">
                     <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: '1rem' }}>search</span>
@@ -1003,7 +1028,7 @@ export default function Themes() {
                         className="flex-1 bg-transparent font-body text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50 dark:text-white"
                     />
                 </div>
-                <div className="flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
+                <div className="hidden md:flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
                     {['all', 'active', 'inactive'].map((tab) => (
                         <button
                             key={tab}
