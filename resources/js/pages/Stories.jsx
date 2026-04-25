@@ -13,6 +13,7 @@ import {
 import { fetchThemes } from '../store/slices/themesSlice';
 import { fetchOccasionTypes } from '../store/slices/occasionTypesSlice';
 import ImageUploader from '../components/ImageUploader';
+import { isPrivilegedRole } from '@/lib/auth';
 
 function slugify(value) {
     return String(value || '')
@@ -256,7 +257,7 @@ function StoryModal({
         });
     }, [themes, form.occasion_type_id]);
     const themeLockedOccasionId = getThemeOccasionId(selectedTheme);
-    const isOccasionDisabled = !!selectedTheme;
+    const isOccasionDisabled = !!themeLockedOccasionId;
     const isUniversalThemeSelected = isUniversalTheme(selectedTheme);
     const lockedOccasionName = themeLockedOccasionId
         ? occasionTypes.find((occasion) => String(occasion?.id) === themeLockedOccasionId)?.name || 'selected occasion'
@@ -284,11 +285,11 @@ function StoryModal({
         setForm((current) => {
             const nextOccasionId = getThemeOccasionId(selectedTheme);
 
-            if (!nextOccasionId && !current.occasion_type_id) {
+            if (!nextOccasionId) {
                 return current;
             }
 
-            if (nextOccasionId && current.occasion_type_id === nextOccasionId) {
+            if (current.occasion_type_id === nextOccasionId) {
                 return current;
             }
 
@@ -406,11 +407,12 @@ function StoryModal({
     const handleThemeChange = (event) => {
         const nextThemeId = event.target.value;
         const nextTheme = themes.find((theme) => String(theme?.id) === String(nextThemeId));
+        const lockedOccasionId = getThemeOccasionId(nextTheme);
 
         setForm((current) => ({
             ...current,
             theme_id: nextThemeId,
-            occasion_type_id: nextThemeId ? getThemeOccasionId(nextTheme) : current.occasion_type_id,
+            occasion_type_id: nextThemeId && lockedOccasionId ? lockedOccasionId : current.occasion_type_id,
         }));
     };
 
@@ -500,8 +502,8 @@ function StoryModal({
             return;
         }
 
-        if (!isUniversalThemeSelected && !form.occasion_type_id) {
-            setFormError('Select an occasion type or choose a universal theme.');
+        if (!form.occasion_type_id) {
+            setFormError('Select an occasion type to continue.');
             return;
         }
 
@@ -612,13 +614,13 @@ function StoryModal({
                                         Occasion Type *
                                     </label>
                                     <select
-                                        required={!isUniversalThemeSelected}
+                                        required
                                         value={form.occasion_type_id}
                                         onChange={handleOccasionChange}
                                         disabled={isOccasionDisabled}
                                         className={`w-full rounded-2xl border border-outline-variant/30 bg-surface-container px-4 py-2.5 text-sm text-on-surface outline-none transition-all focus:border-primary/50 disabled:cursor-not-allowed disabled:opacity-70 dark:border-stone-700 dark:bg-stone-800 dark:text-white dark:focus:border-red-400/50 ${isOccasionDisabled ? 'disabled:bg-surface-container-high dark:disabled:bg-stone-900' : ''}`}
                                     >
-                                        <option value="">{isUniversalThemeSelected ? 'Universal theme selected' : 'Select occasion'}</option>
+                                        <option value="">Select occasion</option>
                                         {occasionTypes.map((occasion) => (
                                             <option key={occasion.id} value={occasion.id}>
                                                 {occasion.name}
@@ -627,7 +629,7 @@ function StoryModal({
                                     </select>
                                     <p className="text-xs text-on-surface-variant dark:text-stone-400">
                                         {isUniversalThemeSelected
-                                            ? 'Universal themes are not tied to a single occasion.'
+                                            ? 'Universal themes work with any occasion, so choose the occasion you want to publish under.'
                                             : themeLockedOccasionId
                                                 ? `This theme is locked to ${lockedOccasionName}.`
                                                 : 'Pick an occasion first to narrow the theme list, or choose a theme to auto-fill it.'}
@@ -1258,12 +1260,12 @@ function StoryActionsMenu({ item, busy, isAdmin, onEdit, onDelete, onTogglePubli
     );
 }
 
-export default function Stories() {
+export default function Stories({ mode = 'auto' }) {
     const dispatch = useDispatch();
     const { items, loading, submitting, error } = useSelector((state) => state.stories);
     const { items: themes } = useSelector((state) => state.themes);
     const { items: occasionTypes } = useSelector((state) => state.occasionTypes);
-    const { user } = useSelector((state) => state.auth);
+    const { user, role } = useSelector((state) => state.auth);
 
     const [modal, setModal] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -1271,7 +1273,16 @@ export default function Stories() {
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
 
-    const isAdmin = String(user?.role || '').toLowerCase() === 'admin';
+    const isAdmin = mode === 'admin'
+        ? true
+        : mode === 'user'
+            ? false
+            : isPrivilegedRole(role || user?.role);
+    const pageTitle = isAdmin ? 'Stories' : 'My Stories';
+    const pageDescription = isAdmin
+        ? 'Manage the stories that power public microsites. Admin-created stories publish instantly, while non-admin submissions stay pending until approval.'
+        : 'Create, edit, and manage only the stories attached to your account. New stories are stored under your user profile automatically.';
+    const createButtonLabel = isAdmin ? 'Add New Story' : 'Create Story';
     const errorText = getErrorText(error);
 
     useEffect(() => {
@@ -1391,10 +1402,10 @@ export default function Stories() {
             <div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end">
                 <div className="max-w-2xl text-center md:text-left">
                     <h1 className="mb-3 font-headline text-4xl font-extrabold tracking-tighter text-on-surface dark:text-white">
-                        Stories
+                        {pageTitle}
                     </h1>
                     <p className="font-body text-base leading-relaxed text-on-surface-variant dark:text-stone-400">
-                        Manage the stories that power public microsites. Admin-created stories publish instantly, while non-admin submissions stay pending until approval.
+                        {pageDescription}
                     </p>
                 </div>
                 <button
@@ -1402,7 +1413,7 @@ export default function Stories() {
                     className="hidden md:flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
                 >
                     <span className="material-symbols-outlined text-[1.1rem]">add</span>
-                    Add New Story
+                    {createButtonLabel}
                 </button>
             </div>
 
@@ -1529,7 +1540,9 @@ export default function Stories() {
                                                         {item?.tagline || item?.slug}
                                                     </p>
                                                     <p className="mt-1 text-xs text-on-surface-variant/80 dark:text-stone-500">
-                                                        {String(item?.user_id) === String(user?.id) ? 'Created by you' : `Created by user #${item?.user_id ?? '-'}`}
+                                                        {isAdmin
+                                                            ? (String(item?.user_id) === String(user?.id) ? 'Created by you' : `Created by user #${item?.user_id ?? '-'}`)
+                                                            : 'Linked to your account'}
                                                     </p>
                                                 </div>
                                             </div>

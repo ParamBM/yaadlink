@@ -26,7 +26,7 @@ class StoryController extends Controller
 
     private function canManagePublishing(Request $request): bool
     {
-        return $this->isAdmin($request);
+        return $this->currentUserId($request) !== null;
     }
 
     private function currentUserId(Request $request): ?int
@@ -324,8 +324,8 @@ class StoryController extends Controller
             ? ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('stories', 'slug')]
             : ['sometimes', 'required', 'string', 'max:200', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('stories', 'slug')->ignore($id)];
         $occasionRules = $id === null
-            ? ['nullable', 'integer', 'exists:occasion_types,id']
-            : ['sometimes', 'nullable', 'integer', 'exists:occasion_types,id'];
+            ? ['required', 'integer', 'exists:occasion_types,id']
+            : ['sometimes', 'required', 'integer', 'exists:occasion_types,id'];
         $story = $id !== null
             ? DB::table('stories')->select('theme_id', 'occasion_type_id')->where('id', $id)->first()
             : null;
@@ -335,8 +335,12 @@ class StoryController extends Controller
             'occasion_type_id' => $occasionRules,
             'theme_id' => [$id === null ? 'required' : 'sometimes', 'integer', 'exists:themes,id'],
             'person_one_name' => [$id === null ? 'required' : 'sometimes', 'string', 'max:100'],
-            'person_two_name' => [$id === null ? 'required' : 'sometimes', 'string', 'max:100'],
-            'start_date' => [$id === null ? 'required' : 'sometimes', 'date'],
+            'person_two_name' => $id === null
+                ? ['required', 'string', 'max:100']
+                : ['sometimes', 'required', 'string', 'max:100'],
+            'start_date' => $id === null
+                ? ['required', 'date']
+                : ['sometimes', 'required', 'date'],
             'tagline' => ['nullable', 'string', 'max:255'],
             'story' => ['nullable', 'string'],
             'milestones' => ['nullable', 'array', 'max:4'],
@@ -483,7 +487,7 @@ class StoryController extends Controller
         }
 
         if ($this->hasStoryColumn('is_published')) {
-            // Admin-created stories publish immediately; everyone else enters the approval queue.
+            // The route is token-protected, so successfully authenticated users can publish immediately.
             $insertData['is_published'] = $this->canManagePublishing($request);
         }
 

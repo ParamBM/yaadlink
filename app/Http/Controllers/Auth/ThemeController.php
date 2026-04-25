@@ -18,6 +18,11 @@ class ThemeController extends Controller
         return Schema::hasTable('themes') && Schema::hasColumn('themes', $column);
     }
 
+    private function hasOccasionTypeColumn(string $column): bool
+    {
+        return Schema::hasTable('occasion_types') && Schema::hasColumn('occasion_types', $column);
+    }
+
     private function baseThemeQuery()
     {
         $query = DB::table('themes');
@@ -49,6 +54,53 @@ class ThemeController extends Controller
     private function parseBoolean($value): ?bool
     {
         return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+    }
+
+    private function resolveOccasionTypeId($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            $occasionTypeId = (int) $value;
+
+            return $occasionTypeId > 0 ? $occasionTypeId : null;
+        }
+
+        if (!Schema::hasTable('occasion_types')) {
+            return null;
+        }
+
+        if (!$this->hasOccasionTypeColumn('slug') && !$this->hasOccasionTypeColumn('uuid')) {
+            return null;
+        }
+
+        $identifier = trim((string) $value);
+
+        if ($identifier === '') {
+            return null;
+        }
+
+        $query = DB::table('occasion_types');
+
+        if ($this->hasOccasionTypeColumn('deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        $query->where(function ($nested) use ($identifier) {
+            if ($this->hasOccasionTypeColumn('slug')) {
+                $nested->orWhere('slug', $identifier);
+            }
+
+            if ($this->hasOccasionTypeColumn('uuid')) {
+                $nested->orWhere('uuid', $identifier);
+            }
+        });
+
+        $occasionType = $query->select('id')->first();
+
+        return $occasionType ? (int) $occasionType->id : null;
     }
 
     private function normalizeSlug(string $value, string $fallback = 'theme'): string
@@ -155,7 +207,13 @@ class ThemeController extends Controller
         }
 
         if ($this->hasColumn('occasion_type_id') && $request->filled('occasion_type_id')) {
-            $occasionTypeId = (int) $request->input('occasion_type_id');
+            $occasionTypeId = $this->resolveOccasionTypeId($request->input('occasion_type_id'));
+
+            if ($occasionTypeId === null) {
+                $query->whereRaw('1 = 0');
+
+                return $query;
+            }
 
             if ($isPublic) {
                 $query->where(function ($nested) use ($occasionTypeId) {

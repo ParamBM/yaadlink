@@ -163,6 +163,10 @@ export const createStory = createAsyncThunk(
     async (payload, { getState, rejectWithValue }) => {
         const { auth } = getState();
 
+        if (!auth.token) {
+            return rejectWithValue('Please log in to publish your story');
+        }
+
         try {
             const res = await axios.post('/api/stories/', payload, {
                 headers: { Authorization: `Bearer ${auth.token}` },
@@ -170,7 +174,12 @@ export const createStory = createAsyncThunk(
 
             return res.data.data;
         } catch (err) {
-            return rejectWithValue(err.response?.data?.errors || err.response?.data?.error || 'Failed to create story');
+            const validationErrors = err.response?.data?.errors;
+            const validationMessage = validationErrors
+                ? Object.values(validationErrors).flat().find(Boolean)
+                : null;
+
+            return rejectWithValue(validationMessage || err.response?.data?.error || 'Failed to create story');
         }
     }
 );

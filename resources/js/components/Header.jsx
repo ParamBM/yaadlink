@@ -1,21 +1,59 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import axios from 'axios';
 import { headerLinks, logoPath, siteName } from '@/lib/site';
+import { isPrivilegedRole } from '@/lib/auth';
+
+function NavItem({ link, className = '', onClick = null, children = null }) {
+    const content = children || link.label;
+
+    if (link.to) {
+        return (
+            <Link className={className} onClick={onClick} to={link.to}>
+                {content}
+            </Link>
+        );
+    }
+
+    return (
+        <a className={className} href={link.href} onClick={onClick}>
+            {content}
+        </a>
+    );
+}
 
 export default function Header() {
-    const { isAuthenticated, token } = useSelector((state) => state.auth);
+    const { isAuthenticated, token, role } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const [confirmLogout, setConfirmLogout] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
+    useEffect(() => {
+        setDrawerOpen(false);
+    }, [location.pathname, location.hash]);
+
+    useEffect(() => {
+        if (!drawerOpen) {
+            return undefined;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [drawerOpen]);
 
     const handleLogout = async () => {
         try {
             if (token) {
                 await axios.post('/api/auth/logout', {}, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
                 });
             }
         } catch (error) {
@@ -27,48 +65,140 @@ export default function Header() {
         }
     };
 
+    const dashboardLabel = isPrivilegedRole(role) ? 'Dashboard' : 'My Dashboard';
+
     return (
         <>
-        <header className="fixed inset-x-0 top-0 z-50">
-            <nav className="bg-surface/80 backdrop-blur-xl shadow-[0_20px_50px_rgba(183,16,42,0.05)]" aria-label="Primary">
-                <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 md:px-8">
-                    <Link className="flex items-center" to="/" aria-label={siteName}>
-                        <img className="h-11 w-auto object-contain" src={logoPath} alt={siteName} />
-                    </Link>
-
-                    <div className="hidden items-center gap-8 font-headline text-sm font-semibold tracking-tight md:flex">
-                        {headerLinks.map((link) => (
-                            <a
-                                key={link.label}
-                                className="text-on-surface-variant transition-colors duration-300 hover:text-primary"
-                                href={link.href}
+            <header className="fixed inset-x-0 top-0 z-50">
+                <nav className="bg-surface/80 backdrop-blur-xl shadow-[0_20px_50px_rgba(183,16,42,0.05)]" aria-label="Primary">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 md:px-8">
+                        <div className="flex items-center gap-3">
+                            <Link className="flex items-center" to="/" aria-label={siteName}>
+                                <img className="h-11 w-auto object-contain" src={logoPath} alt={siteName} />
+                            </Link>
+                            <button
+                                aria-expanded={drawerOpen}
+                                aria-label="Open navigation drawer"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/20 bg-surface-container-lowest text-on-surface-variant transition-colors hover:border-primary/30 hover:text-primary"
+                                onClick={() => setDrawerOpen(true)}
+                                type="button"
                             >
-                                {link.label}
-                            </a>
-                        ))}
+                                <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+                            </button>
+                        </div>
+
+                        <div className="hidden items-center gap-8 font-headline text-sm font-semibold tracking-tight md:flex">
+                            {headerLinks.map((link) => (
+                                <NavItem
+                                    key={link.label}
+                                    link={link}
+                                    className="text-on-surface-variant transition-colors duration-300 hover:text-primary"
+                                />
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            {isAuthenticated && (
+                                <Link
+                                    className="hidden rounded-full border border-outline-variant/20 px-5 py-2.5 font-label text-sm font-medium text-on-surface-variant transition-colors duration-200 hover:border-primary/30 hover:bg-surface-container-low hover:text-primary md:inline-flex"
+                                    to="/dashboard"
+                                >
+                                    {dashboardLabel}
+                                </Link>
+                            )}
+
+                            {isAuthenticated ? (
+                                <button
+                                    onClick={() => setConfirmLogout(true)}
+                                    className="cursor-pointer rounded-full bg-error/10 px-6 py-2.5 font-label font-medium text-error hover:bg-error hover:text-white transition-colors duration-200 inline-flex items-center justify-center gap-2 border border-error/20 hover:border-error"
+                                >
+                                    Logout
+                                    <span className="material-symbols-outlined text-[18px]">logout</span>
+                                </button>
+                            ) : (
+                                <Link
+                                    to="/login"
+                                    className="cursor-pointer rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-2.5 font-label font-medium text-on-primary shadow-[0_20px_40px_rgba(183,16,42,0.15)] transition-transform duration-200 hover:scale-[0.98] inline-flex items-center justify-center hover:text-on-primary"
+                                >
+                                    Sign In
+                                </Link>
+                            )}
+                        </div>
                     </div>
+                </nav>
+            </header>
 
-                    {isAuthenticated ? (
-                        <button
-                            onClick={() => setConfirmLogout(true)}
-                            className="cursor-pointer rounded-full bg-error/10 px-6 py-2.5 font-label font-medium text-error hover:bg-error hover:text-white transition-colors duration-200 inline-flex items-center justify-center gap-2 border border-error/20 hover:border-error"
-                        >
-                            Logout
-                            <span className="material-symbols-outlined text-[18px]">logout</span>
-                        </button>
-                    ) : (
-                        <Link
-                            to="/login"
-                            className="cursor-pointer rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-2.5 font-label font-medium text-on-primary shadow-[0_20px_40px_rgba(183,16,42,0.15)] transition-transform duration-200 hover:scale-[0.98] inline-flex items-center justify-center hover:text-on-primary"
-                        >
-                            Sign In
-                        </Link>
-                    )}
+            <div className={`fixed inset-0 z-[90] transition-opacity duration-300 ${drawerOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}>
+                <button
+                    aria-label="Close navigation drawer"
+                    className="absolute inset-0 bg-black/35 backdrop-blur-sm"
+                    onClick={() => setDrawerOpen(false)}
+                    type="button"
+                />
+
+                <div className={`absolute inset-x-0 top-0 mx-auto w-full max-w-6xl px-4 pt-0 transition-transform duration-300 sm:px-6 ${drawerOpen ? 'translate-y-0' : '-translate-y-full'}`}>
+                    <div className="overflow-hidden rounded-b-[2rem] border border-outline-variant/15 bg-surface/95 shadow-[0_30px_80px_rgba(27,28,28,0.16)] backdrop-blur-xl">
+                        <div className="flex items-center justify-between border-b border-outline-variant/10 px-5 py-4 sm:px-6">
+                            <div>
+                                <p className="font-headline text-lg font-bold text-on-surface">Navigate YaadLink</p>
+                                <p className="text-sm text-on-surface-variant">Quick links for stories, pages, and your dashboard.</p>
+                            </div>
+                            <button
+                                aria-label="Close drawer"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-low text-on-surface-variant transition-colors hover:text-primary"
+                                onClick={() => setDrawerOpen(false)}
+                                type="button"
+                            >
+                                <span className="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                        </div>
+
+                        <div className="grid gap-3 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-3">
+                            {headerLinks.map((link) => (
+                                <NavItem
+                                    key={link.label}
+                                    link={link}
+                                    onClick={() => setDrawerOpen(false)}
+                                    className="flex min-h-10 items-center justify-between rounded-[1.2rem] border border-outline-variant/15 bg-surface-container-lowest px-4 py-4 font-headline text-base font-semibold text-on-surface transition-colors hover:border-primary/20 hover:bg-surface-container-low hover:text-primary"
+                                >
+                                    {link.label}
+                                    <span className="material-symbols-outlined text-[18px] text-on-surface-variant">arrow_forward</span>
+                                </NavItem>
+                            ))}
+
+                            <Link
+                                className="flex min-h-10 items-center justify-between rounded-[1.2rem] border border-outline-variant/15 bg-surface-container-lowest px-4 py-4 font-headline text-base font-semibold text-on-surface transition-colors hover:border-primary/20 hover:bg-surface-container-low hover:text-primary"
+                                onClick={() => setDrawerOpen(false)}
+                                to="/onboarding"
+                            >
+                                Create a Page
+                                <span className="material-symbols-outlined text-[18px] text-on-surface-variant">add</span>
+                            </Link>
+
+                            {isAuthenticated ? (
+                                <Link
+                                    className="flex min-h-10 items-center justify-between rounded-[1.2rem] border border-primary/15 bg-primary/5 px-4 py-4 font-headline text-base font-semibold text-primary transition-colors hover:bg-primary/10"
+                                    onClick={() => setDrawerOpen(false)}
+                                    to="/dashboard"
+                                >
+                                    {dashboardLabel}
+                                    <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                                </Link>
+                            ) : (
+                                <Link
+                                    className="flex min-h-10 items-center justify-between rounded-[1.2rem] border border-primary/15 bg-primary/5 px-4 py-4 font-headline text-base font-semibold text-primary transition-colors hover:bg-primary/10"
+                                    onClick={() => setDrawerOpen(false)}
+                                    to="/login"
+                                >
+                                    Sign In to Continue
+                                    <span className="material-symbols-outlined text-[18px]">login</span>
+                                </Link>
+                            )}
+                        </div>
+                    </div>
                 </div>
-            </nav>
-        </header>
+            </div>
 
-            {/* Logout Confirmation Modal */}
             {confirmLogout && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-surface dark:bg-stone-900 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl border border-outline-variant/20 dark:border-stone-700 animate-in fade-in zoom-in-95 duration-200">

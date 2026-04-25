@@ -79,6 +79,8 @@ Route::prefix('stories')->group(function () {
 });
 
 // Image Upload
+Route::post('/upload/public', [UploadController::class, 'store']);
+
 Route::middleware(CheckRole::class)->group(function () {
     Route::post('/upload', [UploadController::class, 'store']);
 });

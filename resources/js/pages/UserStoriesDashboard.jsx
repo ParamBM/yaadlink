@@ -1,9 +1,10 @@
 import { useSelector } from 'react-redux';
-import { Navigate, Outlet } from 'react-router';
-import DashboardShell from '../components/Dashboard/DashboardShell';
+import { Navigate } from 'react-router';
+import Stories from './Stories';
+import { isPrivilegedRole } from '@/lib/auth';
 
-export default function DashboardLayout() {
-    const { token, isAuthenticated, isInitialized } = useSelector((state) => state.auth);
+export default function UserStoriesDashboard() {
+    const { token, isAuthenticated, isInitialized, role } = useSelector((state) => state.auth);
 
     if (token && !isInitialized) {
         return (
@@ -20,9 +21,9 @@ export default function DashboardLayout() {
         return <Navigate to="/login" replace />;
     }
 
-    return (
-        <DashboardShell>
-            <Outlet />
-        </DashboardShell>
-    );
+    if (isPrivilegedRole(role)) {
+        return <Navigate to="/dashboard/analytics" replace />;
+    }
+
+    return <Stories mode="user" />;
 }

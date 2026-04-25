@@ -4,17 +4,24 @@ import axios from 'axios';
 // Async thunk for uploading an image
 export const uploadImage = createAsyncThunk(
     'upload/uploadImage',
-    async (file, { getState, rejectWithValue }) => {
+    async ({ file, isPublic = false }, { rejectWithValue }) => {
         try {
             const formData = new FormData();
             formData.append('image', file);
 
             const token = sessionStorage.getItem('token');
-            const response = await axios.post('/api/upload', formData, {
+            const headers = {
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json',
+            };
+
+            if (!isPublic && token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            const response = await axios.post(isPublic ? '/api/upload/public' : '/api/upload', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
+                    ...headers,
                 }
             });
 

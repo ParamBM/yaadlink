@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPublicOccasionTypes } from '../store/slices/occasionTypesSlice';
 
 export default function Onboarding() {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
     const { publicItems } = useSelector((state) => state.occasionTypes);
     const [selectedCelebrating, setSelectedCelebrating] = useState('');
     const [isVisible, setIsVisible] = useState(false);
@@ -16,7 +17,8 @@ export default function Onboarding() {
 
     const options = useMemo(() => (
         publicItems.map((item) => ({
-            id: String(item.slug || item.uuid || item.id),
+            id: String(item.id),
+            key: String(item.slug || item.uuid || item.id),
             icon: item.icon || 'celebration',
             title: item.name || 'Occasion',
             description: item.description || 'A moment worth preserving forever.',
@@ -29,26 +31,15 @@ export default function Onboarding() {
         }
     }, [options, selectedCelebrating]);
 
+    const handleContinue = () => {
+        if (selectedCelebrating) {
+            navigate('/onboarding/story', { state: { occasion_type_id: selectedCelebrating } });
+        }
+    };
+
     return (
         <div className="bg-surface text-on-surface antialiased min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-3xl">
-                {/* Progress Indicator */}
-                <div className={`mb-12 flex items-center justify-center gap-4 transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-headline font-bold text-sm">1</div>
-                        <span className="font-label font-medium text-primary text-sm tracking-wide">Celebration</span>
-                    </div>
-                    <div className="w-12 h-[2px] bg-outline-variant opacity-30"></div>
-                    <div className="flex items-center gap-2 opacity-50">
-                        <div className="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-headline font-bold text-sm">2</div>
-                        <span className="font-label font-medium text-on-surface-variant text-sm tracking-wide">Details</span>
-                    </div>
-                    <div className="w-12 h-[2px] bg-outline-variant opacity-30"></div>
-                    <div className="flex items-center gap-2 opacity-50">
-                        <div className="w-8 h-8 rounded-full bg-surface-container-highest text-on-surface-variant flex items-center justify-center font-headline font-bold text-sm">3</div>
-                        <span className="font-label font-medium text-on-surface-variant text-sm tracking-wide">Review</span>
-                    </div>
-                </div>
 
                 {/* Main Content Area - Step 1 */}
                 <div className={`bg-surface-container-lowest rounded-xl shadow-[0_30px_60px_rgba(183,16,42,0.04)] p-8 sm:p-12 relative overflow-hidden transition-all duration-1000 delay-300 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
@@ -66,7 +57,7 @@ export default function Onboarding() {
                             const isSelected = selectedCelebrating === option.id;
                             return (
                                 <button
-                                    key={option.id}
+                                    key={option.key}
                                     type="button"
                                     onClick={(e) => {
                                         e.preventDefault();
@@ -111,7 +102,7 @@ export default function Onboarding() {
                         <Link to="/" className="font-label font-medium text-on-surface-variant hover:text-primary transition-colors px-4 py-2 cursor-pointer">
                             Back
                         </Link>
-                        <button type="button" className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold py-4 px-10 rounded-full shadow-[0_10px_20px_rgba(183,16,42,0.15)] hover:shadow-[0_15px_30px_rgba(183,16,42,0.2)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center gap-2 cursor-pointer">
+                        <button onClick={handleContinue} type="button" className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold py-4 px-10 rounded-full shadow-[0_10px_20px_rgba(183,16,42,0.15)] hover:shadow-[0_15px_30px_rgba(183,16,42,0.2)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 flex items-center gap-2 cursor-pointer">
                             Continue <span className="material-symbols-outlined text-sm">arrow_forward</span>
                         </button>
                     </div>

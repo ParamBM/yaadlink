@@ -34,11 +34,14 @@ export default function OAuthCallback() {
                         const user = response.data.user;
                         dispatch(loginSuccess({ user, token }));
 
-                        if (user.role === 'admin') {
-                            navigate('/dashboard');
-                        } else {
-                            navigate('/');
+                        const redirectTo = sessionStorage.getItem('oauth_redirect_to');
+                        if (redirectTo) {
+                            sessionStorage.removeItem('oauth_redirect_to');
+                            navigate(redirectTo);
+                            return;
                         }
+
+                        navigate('/dashboard');
                     } else {
                         navigate('/login?error=Failed to retrieve user data');
                     }

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadImage } from '../store/slices/uploadSlice';
 
-export default function ImageUploader({ value, onUploadSuccess, onRemove, label }) {
+export default function ImageUploader({ value, onUploadSuccess, onRemove, label, isPublic = false }) {
     const fileInputRef = useRef(null);
     const dispatch = useDispatch();
     const { cachedUploads } = useSelector(state => state.upload);
@@ -38,7 +38,7 @@ export default function ImageUploader({ value, onUploadSuccess, onRemove, label 
         setIsUploading(true);
 
         try {
-            const resultAction = await dispatch(uploadImage(file)).unwrap();
+            const resultAction = await dispatch(uploadImage({ file, isPublic })).unwrap();
             onUploadSuccess(resultAction.url);
         } catch (err) {
             console.error("Upload error:", err);

@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { normalizeRole } from '@/lib/auth';
 
 // Only the token is persisted — user details are always verified from the backend
 const token = sessionStorage.getItem('token');
@@ -13,6 +14,7 @@ const isUserCacheFresh = (checkedAt) =>
 const initialState = {
     user: null,               // never stored in sessionStorage — fetched from /api/auth/check
     token,
+    role: null,
     isAuthenticated: !!token,
     loading: false,
     error: null,
@@ -64,6 +66,23 @@ export const registerUser = createAsyncThunk('auth/registerUser', async (formDat
     }
 });
 
+export const loginUser = createAsyncThunk('auth/loginUser', async ({ email, password }, { rejectWithValue }) => {
+    try {
+        const response = await axios.post('/api/auth/login', { email, password });
+
+        if (!response.data.success) {
+            return rejectWithValue('Login failed');
+        }
+
+        return {
+            user: response.data.user,
+            token: response.data.token,
+        };
+    } catch (error) {
+        return rejectWithValue(error.response?.data?.error || 'Invalid credentials');
+    }
+});
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -77,6 +96,7 @@ const authSlice = createSlice({
             state.isAuthenticated = true;
             state.user = action.payload.user;
             state.token = action.payload.token;
+            state.role = normalizeRole(action.payload.user);
             state.error = null;
             state.isInitialized = true;
             state.userCheckedAt = Date.now();
@@ -92,6 +112,7 @@ const authSlice = createSlice({
         logout: (state) => {
             state.user = null;
             state.token = null;
+            state.role = null;
             state.isAuthenticated = false;
             state.loading = false;
             state.isInitialized = true;
@@ -110,6 +131,7 @@ const authSlice = createSlice({
                 state.isAuthenticated = true;
                 state.user = action.payload.user;
                 state.token = action.payload.token;
+                state.role = normalizeRole(action.payload.user);
                 state.error = null;
                 state.isInitialized = true;
                 state.userCheckedAt = Date.now();
@@ -117,6 +139,7 @@ const authSlice = createSlice({
             .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+                state.role = null;
                 state.isAuthenticated = false;
             })
             .addCase(fetchUser.pending, (state) => {
@@ -126,6 +149,7 @@ const authSlice = createSlice({
                 state.loading = false;
                 state.isAuthenticated = true;
                 state.user = action.payload;
+                state.role = normalizeRole(action.payload);
                 state.isInitialized = true;
                 state.userCheckedAt = Date.now();
             })
@@ -134,9 +158,32 @@ const authSlice = createSlice({
                 state.isAuthenticated = false;
                 state.user = null;
                 state.token = null;
+                state.role = null;
                 state.error = action.payload;
                 state.isInitialized = true;
                 state.userCheckedAt = null;
+            })
+            .addCase(loginUser.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(loginUser.fulfilled, (state, action) => {
+                state.loading = false;
+                state.isAuthenticated = true;
+                state.user = action.payload.user;
+                state.token = action.payload.token;
+                state.role = normalizeRole(action.payload.user);
+                state.error = null;
+                state.isInitialized = true;
+                state.userCheckedAt = Date.now();
+
+                if (action.payload.token) {
+                    sessionStorage.setItem('token', action.payload.token);
+                }
+            })
+            .addCase(loginUser.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
     },
 });

@@ -3,8 +3,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { logout } from '../../store/slices/authSlice';
 import axios from 'axios';
+import { isPrivilegedRole } from '@/lib/auth';
 
-const navLinks = [
+const adminNavLinks = [
     { label: 'Analytics',      icon: 'bar_chart',    href: '/dashboard/analytics' },
     { label: 'Users',          icon: 'group',        href: '/dashboard/users' },
     { label: 'Activity Logs',  icon: 'history',      href: '/dashboard/activity-logs' },
@@ -13,8 +14,12 @@ const navLinks = [
     { label: 'Stories',        icon: 'auto_stories', href: '/dashboard/stories' },
 ];
 
+const userNavLinks = [
+    { label: 'My Stories', icon: 'auto_stories', href: '/dashboard/stories' },
+];
+
 export default function DashboardShell({ children }) {
-    const { user, token } = useSelector((state) => state.auth);
+    const { user, token, role } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
@@ -25,6 +30,8 @@ export default function DashboardShell({ children }) {
     );
     const [mobileOpen, setMobileOpen] = useState(false);
     const [confirmLogout, setConfirmLogout] = useState(false);
+    const privilegedUser = isPrivilegedRole(role);
+    const navLinks = privilegedUser ? adminNavLinks : userNavLinks;
 
     useEffect(() => {
         if (isDark) {
@@ -50,7 +57,7 @@ export default function DashboardShell({ children }) {
         }
     };
 
-    const activePage = navLinks.find(l => l.href === location.pathname)?.label ?? 'Dashboard';
+    const activePage = navLinks.find((link) => link.href === location.pathname)?.label ?? (privilegedUser ? 'Dashboard' : 'My Stories');
 
     return (
         <div className="flex h-screen overflow-hidden antialiased bg-surface dark:bg-stone-950 text-on-surface dark:text-white transition-colors duration-300 selection:bg-primary selection:text-on-primary">
@@ -70,16 +77,16 @@ export default function DashboardShell({ children }) {
                     {/* Profile */}
                     <div className="flex items-center gap-3 px-2">
                         <img
-                            alt={user?.name || 'Admin'}
+                            alt={user?.name || (privilegedUser ? 'Admin' : 'User')}
                             className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
                             src={user?.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'U')}&background=b7102a&color=fff&size=64`}
                         />
                         <div className="overflow-hidden">
                             <h2 className="text-on-surface dark:text-white font-headline font-bold text-base leading-tight truncate">
-                                {user?.name || 'Admin'}
+                                {user?.name || (privilegedUser ? 'Admin' : 'User')}
                             </h2>
                             <p className="text-primary dark:text-red-400 text-xs font-semibold capitalize mt-0.5 truncate font-body">
-                                {user?.role || 'Administrator'}
+                                {user?.role || (privilegedUser ? 'Administrator' : 'User')}
                             </p>
                         </div>
                     </div>
