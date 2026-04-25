@@ -388,7 +388,8 @@ export default function OnboardingStepper() {
 
     return (
         <>
-            <style dangerouslySetInnerHTML={{__html: `
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 .ambient-shadow {
                     box-shadow: 0 10px 40px -10px rgba(183, 16, 42, 0.08);
                 }
@@ -420,10 +421,10 @@ export default function OnboardingStepper() {
                 draftState={form}
             />
 
-            <div className="min-h-screen flex flex-col items-center justify-center p-0 sm:p-6 bg-surface antialiased">
-                <main className={`w-full max-w-full sm:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[920px] bg-surface-container-low rounded-none sm:rounded-xl p-4 sm:p-6 lg:p-7 ambient-shadow relative overflow-hidden origin-top transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0 scale-100 sm:scale-[0.88]' : 'opacity-0 translate-y-8 scale-95 sm:scale-[0.84]'}`}>
+            <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-surface antialiased">
+                <main className={`w-full max-w-[92vw] sm:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[920px] bg-surface-container-low rounded-xl p-5 sm:p-6 lg:p-7 ambient-shadow relative overflow-hidden origin-top transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0 scale-[0.88]' : 'opacity-0 translate-y-8 scale-[0.84]'}`}>
                     <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary-fixed rounded-full blur-[80px] opacity-60 pointer-events-none"></div>
-                    
+
                     <header className="mb-10 relative z-10">
                         <div className="flex items-center justify-between mb-8">
                             <button onClick={handleBack} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-surface-container-highest transition-colors cursor-pointer">
@@ -516,10 +517,10 @@ export default function OnboardingStepper() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="flex flex-col gap-2">
                                             <label className="font-label text-sm font-semibold text-on-surface pl-4" htmlFor="person_one_name">Person One Name *</label>
-                                            <input 
-                                                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all" 
-                                                id="person_one_name" 
-                                                placeholder="e.g., Aarav" 
+                                            <input
+                                                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all"
+                                                id="person_one_name"
+                                                placeholder="e.g., Aarav"
                                                 type="text"
                                                 value={form.person_one_name}
                                                 onChange={(e) => set('person_one_name', e.target.value)}
@@ -527,10 +528,10 @@ export default function OnboardingStepper() {
                                         </div>
                                         <div className="flex flex-col gap-2">
                                             <label className="font-label text-sm font-semibold text-on-surface pl-4" htmlFor="person_two_name">Person Two Name *</label>
-                                            <input 
-                                                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all" 
-                                                id="person_two_name" 
-                                                placeholder="e.g., Meera" 
+                                            <input
+                                                className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all"
+                                                id="person_two_name"
+                                                placeholder="e.g., Meera"
                                                 type="text"
                                                 value={form.person_two_name}
                                                 onChange={(e) => set('person_two_name', e.target.value)}
@@ -539,9 +540,9 @@ export default function OnboardingStepper() {
                                         <div className="flex flex-col gap-2 md:col-span-2">
                                             <label className="font-label text-sm font-semibold text-on-surface pl-4" htmlFor="date">Significant Date *</label>
                                             <div className="relative">
-                                                <input 
-                                                    className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface ambient-shadow outline-none transition-all appearance-none" 
-                                                    id="date" 
+                                                <input
+                                                    className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface ambient-shadow outline-none transition-all appearance-none"
+                                                    id="date"
                                                     type="date"
                                                     value={form.start_date}
                                                     onChange={(e) => set('start_date', e.target.value)}
@@ -553,10 +554,10 @@ export default function OnboardingStepper() {
                                     <div className="flex flex-col gap-2 relative">
                                         <div className="flex items-center justify-between pl-4 pr-2 mb-1">
                                             <label className="font-label text-sm font-semibold text-on-surface" htmlFor="story">Your Story</label>
-                                            <button 
+                                            <button
                                                 onClick={handleEnhance}
                                                 disabled={aiEnhancing}
-                                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-outline-variant/30 text-primary font-label text-xs font-semibold hover:bg-primary-fixed/20 transition-colors group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed" 
+                                                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-outline-variant/30 text-primary font-label text-xs font-semibold hover:bg-primary-fixed/20 transition-colors group relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
                                                 type="button"
                                             >
                                                 <div className="absolute inset-0 shimmer-bg opacity-30 group-hover:opacity-50 transition-opacity"></div>
@@ -566,10 +567,10 @@ export default function OnboardingStepper() {
                                                 <span className="relative z-10 uppercase tracking-wider">{aiEnhancing ? 'Polishing...' : 'Write for me'}</span>
                                             </button>
                                         </div>
-                                        <textarea 
-                                            className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none resize-none transition-all" 
-                                            id="story" 
-                                            placeholder="How did you meet? What makes this moment special? Don't worry about perfect writing..." 
+                                        <textarea
+                                            className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-2xl px-6 py-5 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none resize-none transition-all"
+                                            id="story"
+                                            placeholder="How did you meet? What makes this moment special? Don't worry about perfect writing..."
                                             rows="5"
                                             value={form.story}
                                             onChange={(e) => set('story', e.target.value)}
@@ -603,10 +604,10 @@ export default function OnboardingStepper() {
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <label className="font-label text-sm font-semibold text-on-surface pl-4" htmlFor="tagline">Tagline</label>
-                                        <input 
-                                            className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all" 
-                                            id="tagline" 
-                                            placeholder="A short, catchy phrase..." 
+                                        <input
+                                            className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all"
+                                            id="tagline"
+                                            placeholder="A short, catchy phrase..."
                                             type="text"
                                             value={form.tagline}
                                             onChange={(e) => set('tagline', e.target.value)}
@@ -614,10 +615,10 @@ export default function OnboardingStepper() {
                                     </div>
                                     <div className="flex flex-col gap-2">
                                         <label className="font-label text-sm font-semibold text-on-surface pl-4" htmlFor="final_message">Final Message / Quote</label>
-                                        <input 
-                                            className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all" 
-                                            id="final_message" 
-                                            placeholder="Forever and always." 
+                                        <input
+                                            className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all"
+                                            id="final_message"
+                                            placeholder="Forever and always."
                                             type="text"
                                             value={form.final_message}
                                             onChange={(e) => set('final_message', e.target.value)}
@@ -649,27 +650,27 @@ export default function OnboardingStepper() {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div className="flex flex-col gap-1.5 md:col-span-2">
                                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Title *</label>
-                                                    <input 
-                                                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary outline-none" 
-                                                        placeholder="First meeting..." 
+                                                    <input
+                                                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                                                        placeholder="First meeting..."
                                                         value={milestone.title}
                                                         onChange={(e) => updateMilestone(index, 'title', e.target.value)}
                                                     />
                                                 </div>
                                                 <div className="flex flex-col gap-1.5">
                                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Date</label>
-                                                    <input 
+                                                    <input
                                                         type="date"
-                                                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary outline-none appearance-none" 
+                                                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary outline-none appearance-none"
                                                         value={milestone.event_date}
                                                         onChange={(e) => updateMilestone(index, 'event_date', e.target.value)}
                                                     />
                                                 </div>
                                                 <div className="flex flex-col gap-1.5 md:col-span-2">
                                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Description</label>
-                                                    <textarea 
+                                                    <textarea
                                                         rows="2"
-                                                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary outline-none resize-none" 
+                                                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary outline-none resize-none"
                                                         value={milestone.description}
                                                         onChange={(e) => updateMilestone(index, 'description', e.target.value)}
                                                     />
@@ -689,7 +690,7 @@ export default function OnboardingStepper() {
                                     ))}
 
                                     {form.milestones.length < MAX_STORY_MILESTONES && (
-                                        <button 
+                                        <button
                                             onClick={addMilestone}
                                             className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-dashed border-outline-variant/50 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors font-medium text-sm"
                                         >
@@ -739,16 +740,16 @@ export default function OnboardingStepper() {
                                                             onChange={(e) => updateImage(index, 'url', e.target.value)}
                                                         />
                                                     </div>
-                                                    <input 
-                                                        className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary outline-none" 
-                                                        placeholder="Caption (optional)" 
+                                                    <input
+                                                        className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary outline-none"
+                                                        placeholder="Caption (optional)"
                                                         value={image.caption}
                                                         onChange={(e) => updateImage(index, 'caption', e.target.value)}
                                                     />
                                                 </div>
                                             ))}
                                             {form.images.length < MAX_STORY_IMAGES && (
-                                                <button 
+                                                <button
                                                     onClick={addImage}
                                                     className="flex flex-col items-center justify-center gap-2 aspect-square rounded-xl border-2 border-dashed border-outline-variant/50 text-on-surface-variant hover:text-primary hover:border-primary/50 transition-colors font-medium text-xs bg-surface-container-lowest/50"
                                                 >
