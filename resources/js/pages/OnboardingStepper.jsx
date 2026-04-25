@@ -420,8 +420,8 @@ export default function OnboardingStepper() {
                 draftState={form}
             />
 
-            <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-surface antialiased">
-                <main className={`w-full max-w-[92vw] sm:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[920px] bg-surface-container-low rounded-xl p-5 sm:p-6 lg:p-7 ambient-shadow relative overflow-hidden origin-top transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0 scale-[0.88]' : 'opacity-0 translate-y-8 scale-[0.84]'}`}>
+            <div className="min-h-screen flex flex-col items-center justify-center p-0 sm:p-6 bg-surface antialiased">
+                <main className={`w-full max-w-full sm:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[920px] bg-surface-container-low rounded-none sm:rounded-xl p-4 sm:p-6 lg:p-7 ambient-shadow relative overflow-hidden origin-top transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0 scale-100 sm:scale-[0.88]' : 'opacity-0 translate-y-8 scale-95 sm:scale-[0.84]'}`}>
                     <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary-fixed rounded-full blur-[80px] opacity-60 pointer-events-none"></div>
                     
                     <header className="mb-10 relative z-10">
@@ -519,7 +519,7 @@ export default function OnboardingStepper() {
                                             <input 
                                                 className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all" 
                                                 id="person_one_name" 
-                                                placeholder="e.g., Emma" 
+                                                placeholder="e.g., Aarav" 
                                                 type="text"
                                                 value={form.person_one_name}
                                                 onChange={(e) => set('person_one_name', e.target.value)}
@@ -530,7 +530,7 @@ export default function OnboardingStepper() {
                                             <input 
                                                 className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all" 
                                                 id="person_two_name" 
-                                                placeholder="e.g., James" 
+                                                placeholder="e.g., Meera" 
                                                 type="text"
                                                 value={form.person_two_name}
                                                 onChange={(e) => set('person_two_name', e.target.value)}

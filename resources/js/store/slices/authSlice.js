@@ -11,6 +11,18 @@ const AUTH_USER_CACHE_TTL_MS = 2 * 60 * 1000;
 const isUserCacheFresh = (checkedAt) =>
     !!checkedAt && Date.now() - checkedAt < AUTH_USER_CACHE_TTL_MS;
 
+const resetAuthState = (state) => {
+    state.user = null;
+    state.token = null;
+    state.role = null;
+    state.isAuthenticated = false;
+    state.loading = false;
+    state.error = null;
+    state.isInitialized = true;
+    state.userCheckedAt = null;
+    sessionStorage.removeItem('token');
+};
+
 const initialState = {
     user: null,               // never stored in sessionStorage — fetched from /api/auth/check
     token,
@@ -83,6 +95,22 @@ export const loginUser = createAsyncThunk('auth/loginUser', async ({ email, pass
     }
 });
 
+export const logoutUser = createAsyncThunk('auth/logoutUser', async (_, { getState }) => {
+    const { auth } = getState();
+
+    try {
+        if (auth.token) {
+            await axios.post('/api/auth/logout', {}, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+        }
+    } catch (error) {
+        console.error('Logout failed:', error);
+    }
+
+    return true;
+});
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -110,14 +138,7 @@ const authSlice = createSlice({
             state.error = action.payload;
         },
         logout: (state) => {
-            state.user = null;
-            state.token = null;
-            state.role = null;
-            state.isAuthenticated = false;
-            state.loading = false;
-            state.isInitialized = true;
-            state.userCheckedAt = null;
-            sessionStorage.removeItem('token');
+            resetAuthState(state);
         },
     },
     extraReducers: (builder) => {
@@ -184,6 +205,9 @@ const authSlice = createSlice({
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            .addCase(logoutUser.fulfilled, (state) => {
+                resetAuthState(state);
             });
     },
 });

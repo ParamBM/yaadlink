@@ -279,7 +279,7 @@ class StoryController extends Controller
 
         $story['ai_polished'] = (bool) ($story['ai_polished'] ?? false);
         $story['is_published'] = (bool) ($story['is_published'] ?? false);
-        $story['approval_status'] = $story['is_published'] ? 'published' : 'pending_approval';
+        $story['approval_status'] = $story['is_published'] ? 'published' : 'hidden';
         $story['is_branding_hidden'] = (bool) ($story['is_branding_hidden'] ?? false);
         $story['view_count'] = (int) ($story['view_count'] ?? 0);
         $story['milestones'] = $this->normalizeMilestones($story['milestones'] ?? []);
@@ -388,10 +388,6 @@ class StoryController extends Controller
             $themeOccasionId = $theme->occasion_type_id !== null ? (int) $theme->occasion_type_id : null;
 
             if ($themeOccasionId === null) {
-                if ($occasionId !== null) {
-                    $validator->errors()->add('occasion_type_id', 'Universal themes cannot be linked to a specific occasion type.');
-                }
-
                 return;
             }
 

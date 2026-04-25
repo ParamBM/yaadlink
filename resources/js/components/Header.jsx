@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout } from '../store/slices/authSlice';
-import axios from 'axios';
+import { logoutUser } from '../store/slices/authSlice';
 import { headerLinks, logoPath, siteName } from '@/lib/site';
 import { isPrivilegedRole } from '@/lib/auth';
 
@@ -25,7 +24,7 @@ function NavItem({ link, className = '', onClick = null, children = null }) {
 }
 
 export default function Header() {
-    const { isAuthenticated, token, role } = useSelector((state) => state.auth);
+    const { isAuthenticated, role } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
@@ -50,19 +49,8 @@ export default function Header() {
     }, [drawerOpen]);
 
     const handleLogout = async () => {
-        try {
-            if (token) {
-                await axios.post('/api/auth/logout', {}, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-            }
-        } catch (error) {
-            console.error('Logout failed:', error);
-        } finally {
-            sessionStorage.removeItem('token');
-            dispatch(logout());
-            navigate('/login');
-        }
+        await dispatch(logoutUser());
+        navigate('/login');
     };
 
     const dashboardLabel = isPrivilegedRole(role) ? 'Dashboard' : 'My Dashboard';
@@ -71,10 +59,10 @@ export default function Header() {
         <>
             <header className="fixed inset-x-0 top-0 z-50">
                 <nav className="bg-surface/80 backdrop-blur-xl shadow-[0_20px_50px_rgba(183,16,42,0.05)]" aria-label="Primary">
-                    <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 md:px-8">
-                        <div className="flex items-center gap-3">
+                    <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-4 py-4 sm:gap-4 sm:px-6 md:px-8">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             <Link className="flex items-center" to="/" aria-label={siteName}>
-                                <img className="h-11 w-auto object-contain" src={logoPath} alt={siteName} />
+                                <img className="h-9 w-auto object-contain sm:h-11" src={logoPath} alt={siteName} />
                             </Link>
                             <button
                                 aria-expanded={drawerOpen}
@@ -97,10 +85,10 @@ export default function Header() {
                             ))}
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                             {isAuthenticated && (
                                 <Link
-                                    className="hidden rounded-full border border-outline-variant/20 px-5 py-2.5 font-label text-sm font-medium text-on-surface-variant transition-colors duration-200 hover:border-primary/30 hover:bg-surface-container-low hover:text-primary md:inline-flex"
+                                    className="hidden whitespace-nowrap rounded-full border border-outline-variant/20 px-5 py-2.5 font-label text-sm font-medium text-on-surface-variant transition-colors duration-200 hover:border-primary/30 hover:bg-surface-container-low hover:text-primary md:inline-flex"
                                     to="/dashboard"
                                 >
                                     {dashboardLabel}
@@ -110,7 +98,7 @@ export default function Header() {
                             {isAuthenticated ? (
                                 <button
                                     onClick={() => setConfirmLogout(true)}
-                                    className="cursor-pointer rounded-full bg-error/10 px-6 py-2.5 font-label font-medium text-error hover:bg-error hover:text-white transition-colors duration-200 inline-flex items-center justify-center gap-2 border border-error/20 hover:border-error"
+                                    className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-error/20 bg-error/10 px-4 py-2.5 font-label text-sm font-medium text-error transition-colors duration-200 hover:border-error hover:bg-error hover:text-white sm:px-6"
                                 >
                                     Logout
                                     <span className="material-symbols-outlined text-[18px]">logout</span>
@@ -118,7 +106,7 @@ export default function Header() {
                             ) : (
                                 <Link
                                     to="/login"
-                                    className="cursor-pointer rounded-full bg-gradient-to-r from-primary to-primary-container px-6 py-2.5 font-label font-medium text-on-primary shadow-[0_20px_40px_rgba(183,16,42,0.15)] transition-transform duration-200 hover:scale-[0.98] inline-flex items-center justify-center hover:text-on-primary"
+                                    className="inline-flex min-w-fit shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-gradient-to-r from-primary to-primary-container px-4 py-2.5 font-label text-sm font-medium leading-none text-on-primary shadow-[0_20px_40px_rgba(183,16,42,0.15)] transition-transform duration-200 hover:scale-[0.98] hover:text-on-primary sm:px-6"
                                 >
                                     Sign In
                                 </Link>
@@ -190,7 +178,7 @@ export default function Header() {
                                     onClick={() => setDrawerOpen(false)}
                                     to="/login"
                                 >
-                                    Sign In to Continue
+                                    <span className="whitespace-nowrap">Sign In to Continue</span>
                                     <span className="material-symbols-outlined text-[18px]">login</span>
                                 </Link>
                             )}

@@ -64,11 +64,10 @@ export default function Onboarding() {
                                         e.stopPropagation();
                                         setSelectedCelebrating(option.id);
                                     }}
-                                    className={`relative group flex flex-col items-center justify-center p-8 rounded-lg transition-all duration-300 cursor-pointer select-none ${
-                                        isSelected
+                                    className={`relative group flex flex-col items-center justify-center p-8 rounded-lg transition-all duration-300 cursor-pointer select-none ${isSelected
                                             ? 'bg-surface-container-lowest border border-primary/20 shadow-[0_10px_30px_rgba(183,16,42,0.08)] scale-[1.02]'
                                             : 'bg-surface-container-low hover:bg-surface-container-lowest hover:shadow-[0_20px_40px_rgba(27,28,28,0.04)] border border-transparent hover:border-outline-variant/15'
-                                    }`}
+                                        }`}
                                 >
                                     {isSelected && (
                                         <>
@@ -78,12 +77,11 @@ export default function Onboarding() {
                                             </div>
                                         </>
                                     )}
-                                    
-                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${
-                                        isSelected
+
+                                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${isSelected
                                             ? 'bg-primary-container/10 text-primary'
                                             : 'bg-surface-container flex text-on-surface-variant group-hover:text-primary'
-                                    }`}>
+                                        }`}>
                                         <span className="material-symbols-outlined text-3xl" style={isSelected ? { fontVariationSettings: "'FILL' 1" } : {}}>{option.icon}</span>
                                     </div>
                                     <h3 className={`font-headline font-bold text-xl mb-2 transition-colors ${isSelected ? 'text-primary' : 'text-on-surface group-hover:text-primary'}`}>

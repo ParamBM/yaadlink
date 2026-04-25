@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router';
-import { logout } from '../../store/slices/authSlice';
-import axios from 'axios';
+import { logoutUser } from '../../store/slices/authSlice';
 import { isPrivilegedRole } from '@/lib/auth';
 
 const adminNavLinks = [
@@ -19,7 +18,7 @@ const userNavLinks = [
 ];
 
 export default function DashboardShell({ children }) {
-    const { user, token, role } = useSelector((state) => state.auth);
+    const { user, role } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
@@ -44,17 +43,8 @@ export default function DashboardShell({ children }) {
     }, [isDark]);
 
     const handleLogout = async () => {
-        try {
-            if (token) {
-                await axios.post('/api/auth/logout', {}, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-            }
-        } catch (_) { /* swallow */ } finally {
-            sessionStorage.removeItem('token');
-            dispatch(logout());
-            navigate('/login');
-        }
+        await dispatch(logoutUser());
+        navigate('/login');
     };
 
     const activePage = navLinks.find((link) => link.href === location.pathname)?.label ?? (privilegedUser ? 'Dashboard' : 'My Stories');

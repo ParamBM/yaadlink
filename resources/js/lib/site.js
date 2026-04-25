@@ -3,10 +3,10 @@ export const siteName = (envAppName && envAppName !== '${APP_NAME}') ? envAppNam
 export const logoPath = '/branding/logo.webp';
 
 export const headerLinks = [
-    { label: 'Our Story', href: '#' },
-    { label: 'Milestones', href: '#' },
-    { label: 'Gallery', href: '#' },
-    { label: 'RSVP', href: '#' },
+    { label: 'Showcase', href: '#showcase' },
+    { label: 'Features', href: '#features' },
+    { label: 'Testimonials', href: '#testimonials' },
+    { label: 'Plans', href: '#plans' },
 ];
 
 export const footerLinks = [

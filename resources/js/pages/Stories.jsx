@@ -163,14 +163,14 @@ function StoryStatusBadge({ story }) {
     if (story?.is_published) {
         return (
             <span className="inline-flex items-center rounded-full bg-tertiary-fixed px-3 py-1 text-xs font-semibold text-on-tertiary-fixed dark:bg-tertiary-fixed/20 dark:text-tertiary-fixed">
-                Published
+                Live
             </span>
         );
     }
 
     return (
-        <span className="inline-flex items-center rounded-full bg-secondary-fixed/20 px-3 py-1 text-xs font-semibold text-secondary dark:bg-secondary-fixed/15 dark:text-secondary-fixed">
-            Pending Approval
+        <span className="inline-flex items-center rounded-full bg-outline-variant/30 px-3 py-1 text-xs font-semibold text-on-surface-variant dark:bg-stone-700/70 dark:text-stone-300">
+            Hidden
         </span>
     );
 }
@@ -202,8 +202,8 @@ function EmptyState({ onAdd, isAdmin }) {
             <p className="mb-1 font-headline text-lg font-semibold text-on-surface dark:text-white">No stories yet</p>
             <p className="mb-6 max-w-md font-body text-sm text-on-surface-variant dark:text-stone-400">
                 {isAdmin
-                    ? 'Create the first published story or review submissions from your team here.'
-                    : 'Create your first story. It will stay pending until an admin approves it.'}
+                    ? 'Create the first live story or keep a private version hidden until you are ready to publish it.'
+                    : 'Create your first story. Once you save it from your authenticated account, it goes live on your microsite.'}
             </p>
             <button
                 onClick={onAdd}
@@ -542,8 +542,8 @@ function StoryModal({
                         </h2>
                         <p className="mt-1 text-sm text-on-surface-variant dark:text-stone-400">
                             {isAdmin
-                                ? 'Stories created by admins publish immediately.'
-                                : 'Stories created by non-admins stay pending until an admin approves them.'}
+                                ? 'Admin-created stories can go live immediately or be hidden for later.'
+                                : 'Authenticated users save directly to their account, and new stories go live as soon as they are saved.'}
                         </p>
                     </div>
                     <button
@@ -787,16 +787,16 @@ function StoryModal({
                                 <p className="mt-1 text-sm text-on-surface-variant dark:text-stone-400">
                                     {isAdmin
                                         ? isEdit
-                                            ? 'You can approve pending stories or unpublish live ones from here.'
+                                            ? 'Use this panel to hide stories from the public site or publish them again.'
                                             : 'This story will publish immediately because it is being created by an admin.'
-                                        : 'This story will remain pending approval until an admin publishes it.'}
+                                        : 'This story will go live as soon as you save it. You can return here later to edit your own content.'}
                                 </p>
 
                                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                                     <div className="rounded-2xl border border-outline-variant/20 bg-surface px-4 py-3 dark:border-stone-700/60 dark:bg-stone-900">
                                         <p className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Current Status</p>
                                         <div className="mt-2">
-                                            <StoryStatusBadge story={{ is_published: isEdit ? form.is_published : isAdmin }} />
+                                            <StoryStatusBadge story={{ is_published: isEdit ? form.is_published : true }} />
                                         </div>
                                     </div>
 
@@ -813,15 +813,15 @@ function StoryModal({
                                         }`}
                                     >
                                         <div>
-                                            <p className="font-label text-xs font-semibold uppercase tracking-wider">Approval Control</p>
+                                            <p className="font-label text-xs font-semibold uppercase tracking-wider">Visibility Control</p>
                                             <p className="mt-1 text-sm font-semibold">
                                                 {!isAdmin
                                                     ? 'Admin only'
                                                     : !isEdit
-                                                        ? 'Auto-published'
+                                                        ? 'Goes live on save'
                                                         : form.is_published
-                                                            ? 'Unpublish'
-                                                            : 'Approve & Publish'}
+                                                            ? 'Hide from public site'
+                                                            : 'Publish live'}
                                             </p>
                                         </div>
                                         <span className={`material-symbols-outlined ${form.is_published ? 'text-tertiary dark:text-tertiary-fixed' : 'text-secondary dark:text-secondary-fixed'}`}>
@@ -1216,7 +1216,7 @@ function StoryActionsMenu({ item, busy, isAdmin, onEdit, onDelete, onTogglePubli
                             <span className="material-symbols-outlined text-[18px]">
                                 {item?.is_published ? 'visibility_off' : 'task_alt'}
                             </span>
-                            {item?.is_published ? 'Unpublish story' : 'Approve & publish'}
+                            {item?.is_published ? 'Hide story' : 'Publish story'}
                         </button>
                     )}
 
@@ -1280,10 +1280,15 @@ export default function Stories({ mode = 'auto' }) {
             : isPrivilegedRole(role || user?.role);
     const pageTitle = isAdmin ? 'Stories' : 'My Stories';
     const pageDescription = isAdmin
-        ? 'Manage the stories that power public microsites. Admin-created stories publish instantly, while non-admin submissions stay pending until approval.'
-        : 'Create, edit, and manage only the stories attached to your account. New stories are stored under your user profile automatically.';
+        ? 'Manage the stories that power public microsites. Keep them live for guests or hide them when you need to step in.'
+        : 'Create, edit, and manage only the stories attached to your account. New stories are saved under your user profile and go live automatically.';
     const createButtonLabel = isAdmin ? 'Add New Story' : 'Create Story';
     const errorText = getErrorText(error);
+    const statusTabs = [
+        { value: 'all', label: 'All' },
+        { value: 'published', label: 'Live' },
+        { value: 'hidden', label: 'Hidden' },
+    ];
 
     useEffect(() => {
         dispatch(fetchStories());
@@ -1293,12 +1298,12 @@ export default function Stories({ mode = 'auto' }) {
 
     const stats = useMemo(() => {
         const published = items.filter((item) => item?.is_published).length;
-        const pending = items.filter((item) => !item?.is_published).length;
+        const hidden = items.filter((item) => !item?.is_published).length;
 
         return {
             total: items.length,
             published,
-            pending,
+            hidden,
         };
     }, [items]);
 
@@ -1311,7 +1316,7 @@ export default function Stories({ mode = 'auto' }) {
                         return !!item?.is_published;
                     }
 
-                    if (filterStatus === 'pending') {
+                    if (filterStatus === 'hidden') {
                         return !item?.is_published;
                     }
 
@@ -1427,8 +1432,8 @@ export default function Stories({ mode = 'auto' }) {
                     <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-tertiary dark:text-tertiary-fixed">{stats.published}</p>
                 </div>
                 <div className="rounded-[1.2rem] md:rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-3 md:p-5 dark:border-stone-700/50 dark:bg-stone-900 text-center md:text-left">
-                    <p className="font-label text-[10px] md:text-xs font-semibold uppercase tracking-wider text-on-surface-variant truncate">Pending</p>
-                    <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-secondary dark:text-secondary-fixed">{stats.pending}</p>
+                    <p className="font-label text-[10px] md:text-xs font-semibold uppercase tracking-wider text-on-surface-variant truncate">Hidden</p>
+                    <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-secondary dark:text-secondary-fixed">{stats.hidden}</p>
                 </div>
             </div>
 
@@ -1445,17 +1450,17 @@ export default function Stories({ mode = 'auto' }) {
             {/* Mobile Action Row */}
             <div className="flex md:hidden items-center justify-between gap-3 mb-6">
                 <div className="flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
-                    {['all', 'published', 'pending'].map((tab) => (
+                    {statusTabs.map((tab) => (
                         <button
-                            key={tab}
-                            onClick={() => setFilterStatus(tab)}
+                            key={tab.value}
+                            onClick={() => setFilterStatus(tab.value)}
                             className={`rounded-full px-3 py-1.5 text-[10px] font-bold capitalize transition-all ${
-                                filterStatus === tab
+                                filterStatus === tab.value
                                     ? 'bg-surface-container-lowest text-on-surface shadow-sm dark:bg-stone-700 dark:text-white'
                                     : 'text-on-surface-variant dark:text-stone-400'
                             }`}
                         >
-                            {tab}
+                            {tab.label}
                         </button>
                     ))}
                 </div>
@@ -1479,17 +1484,17 @@ export default function Stories({ mode = 'auto' }) {
                 </div>
 
                 <div className="hidden md:flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
-                    {['all', 'published', 'pending'].map((tab) => (
+                    {statusTabs.map((tab) => (
                         <button
-                            key={tab}
-                            onClick={() => setFilterStatus(tab)}
+                            key={tab.value}
+                            onClick={() => setFilterStatus(tab.value)}
                             className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-all ${
-                                filterStatus === tab
+                                filterStatus === tab.value
                                     ? 'bg-surface-container-lowest text-on-surface shadow-sm dark:bg-stone-700 dark:text-white'
                                     : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
                             }`}
                         >
-                            {tab}
+                            {tab.label}
                         </button>
                     ))}
                 </div>
@@ -1572,7 +1577,7 @@ export default function Stories({ mode = 'auto' }) {
                                                         className="inline-flex h-9 items-center gap-1 rounded-full border border-secondary-fixed/40 bg-secondary-fixed/15 px-3 text-xs font-semibold text-secondary transition-colors hover:bg-secondary-fixed/25 disabled:opacity-60 dark:border-secondary/30 dark:bg-secondary/10 dark:text-secondary-fixed"
                                                     >
                                                         <span className="material-symbols-outlined text-[16px]">task_alt</span>
-                                                        Approve
+                                                        Publish
                                                     </button>
                                                 )}
 
