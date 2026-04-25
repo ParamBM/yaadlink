@@ -564,7 +564,7 @@ function StoryModal({
 
                     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
                         <div className="space-y-5">
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                                 <div className="flex flex-col gap-1.5">
                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                                         Person One *
@@ -658,7 +658,7 @@ function StoryModal({
                                     </p>
                                 </div>
 
-                                <div className="flex flex-col gap-1.5 sm:col-span-2">
+                                <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                                         Start Date *
                                     </label>
@@ -667,7 +667,7 @@ function StoryModal({
                                         type="date"
                                         value={form.start_date}
                                         onChange={(event) => set('start_date', event.target.value)}
-                                        className="w-full max-w-full rounded-2xl border border-outline-variant/30 bg-surface-container px-4 py-2.5 text-sm text-on-surface outline-none transition-all focus:border-primary/50 dark:border-stone-700 dark:bg-stone-800 dark:text-white dark:focus:border-red-400/50"
+                                        className="block w-full min-w-0 max-w-full appearance-none rounded-2xl border border-outline-variant/30 bg-surface-container px-3 py-2.5 text-sm text-on-surface outline-none transition-all focus:border-primary/50 dark:border-stone-700 dark:bg-stone-800 dark:text-white dark:focus:border-red-400/50 sm:px-4"
                                     />
                                 </div>
 
