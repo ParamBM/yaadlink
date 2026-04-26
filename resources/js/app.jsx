@@ -1,4 +1,5 @@
 import '../css/main.css';
+import './api/axiosConfig';
 
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';

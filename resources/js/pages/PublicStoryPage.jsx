@@ -2,14 +2,32 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router';
 import { fetchPublicStoryBySlug } from '../store/slices/storiesSlice';
+import { fetchPublicThemes } from '../store/slices/themesSlice';
 import { getThemeComponent } from '../themes';
 
 export default function PublicStoryPage() {
     const { slug = '' } = useParams();
     const dispatch = useDispatch();
+    const slugKey = String(slug).trim();
     const { publicStoryCache, currentPublicStory, publicDetailLoading, publicDetailError } = useSelector((state) => state.stories);
+    const { publicItems: publicThemes, publicLastFetched } = useSelector((state) => state.themes);
 
-    const story = publicStoryCache[String(slug).trim()] || currentPublicStory;
+    const cachedStory = publicStoryCache[slugKey] || null;
+    const activeStory = currentPublicStory?.slug === slugKey ? currentPublicStory : null;
+    const story = cachedStory || activeStory;
+
+    const resolvedTheme =
+        story?.theme ||
+        publicThemes.find((theme) => String(theme?.id) === String(story?.theme_id)) ||
+        null;
+
+    const storyForTheme = story
+        ? {
+            ...story,
+            theme: resolvedTheme,
+            themeName: story.themeName || resolvedTheme?.name || null,
+        }
+        : null;
 
     useEffect(() => {
         if (!slug) {
@@ -18,6 +36,14 @@ export default function PublicStoryPage() {
 
         dispatch(fetchPublicStoryBySlug(slug));
     }, [dispatch, slug]);
+
+    useEffect(() => {
+        if (!story?.theme_id || story?.theme?.slug || publicLastFetched) {
+            return;
+        }
+
+        dispatch(fetchPublicThemes());
+    }, [dispatch, publicLastFetched, story]);
 
     if (publicDetailLoading && !story) {
         return (
@@ -45,7 +71,7 @@ export default function PublicStoryPage() {
         return null;
     }
 
-    const ThemeComponent = getThemeComponent(story?.theme?.slug);
+    const ThemeComponent = getThemeComponent(storyForTheme?.theme?.slug);
 
-    return <ThemeComponent data={story} />;
+    return <ThemeComponent data={storyForTheme} />;
 }

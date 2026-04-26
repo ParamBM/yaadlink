@@ -7,6 +7,7 @@ use App\Services\GeminiStoryEnhancer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -79,12 +80,16 @@ class StoryController extends Controller
         return $this->makeUniqueSlug($base !== '' ? $base : 'story');
     }
 
-    private function baseStoryQuery()
+    private function baseStoryQuery(bool $onlyTrashed = false)
     {
         $query = DB::table('stories');
 
         if ($this->hasStoryColumn('deleted_at')) {
-            $query->whereNull('deleted_at');
+            if ($onlyTrashed) {
+                $query->whereNotNull('deleted_at');
+            } else {
+                $query->whereNull('deleted_at');
+            }
         }
 
         if ($this->hasStoryColumn('published_at')) {
@@ -102,7 +107,8 @@ class StoryController extends Controller
 
     private function authorizedStoryQuery(Request $request)
     {
-        $query = $this->baseStoryQuery();
+        $trash = $this->isAdmin($request) && $request->boolean('trash');
+        $query = $this->baseStoryQuery($trash);
 
         if (!$this->isAdmin($request) && $this->hasStoryColumn('user_id')) {
             $query->where('user_id', $this->currentUserId($request));
@@ -160,6 +166,25 @@ class StoryController extends Controller
 
         return DB::table('occasion_types')
             ->whereIn('id', array_values(array_unique($ids)))
+            ->get()
+            ->keyBy('id');
+    }
+
+    private function fetchUsersByIds(array $ids)
+    {
+        if (empty($ids) || !Schema::hasTable('users')) {
+            return collect();
+        }
+
+        $query = DB::table('users')
+            ->whereIn('id', array_values(array_unique($ids)));
+
+        if (Schema::hasColumn('users', 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        return $query
+            ->select('id', 'name')
             ->get()
             ->keyBy('id');
     }
@@ -269,7 +294,7 @@ class StoryController extends Controller
         }, $images));
     }
 
-    private function normalizeStory($story, $theme = null, $occasionType = null): ?array
+    private function normalizeStory($story, $theme = null, $occasionType = null, $creator = null): ?array
     {
         if (!$story) {
             return null;
@@ -296,6 +321,7 @@ class StoryController extends Controller
         $story['summary'] = $story['tagline'] ?: ($story['story'] ?? null);
         $story['occasion'] = $story['occasion_type']['name'] ?? null;
         $story['themeName'] = $story['theme']['name'] ?? null;
+        $story['creator_name'] = $creator->name ?? null;
 
         return $story;
     }
@@ -306,16 +332,132 @@ class StoryController extends Controller
 
         $themeIds = $stories->pluck('theme_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
         $occasionIds = $stories->pluck('occasion_type_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
+        $creatorIds = $stories->pluck('user_id')->filter()->map(fn ($id) => (int) $id)->unique()->values()->all();
 
         $themes = $this->fetchThemesByIds($themeIds);
         $occasionTypes = $this->fetchOccasionTypesByIds($occasionIds);
+        $creators = $this->fetchUsersByIds($creatorIds);
 
-        return $stories->map(function ($story) use ($themes, $occasionTypes) {
+        return $stories->map(function ($story) use ($themes, $occasionTypes, $creators) {
             $theme = isset($story['theme_id']) ? $themes->get((int) $story['theme_id']) : null;
             $occasionType = isset($story['occasion_type_id']) ? $occasionTypes->get((int) $story['occasion_type_id']) : null;
+            $creator = isset($story['user_id']) ? $creators->get((int) $story['user_id']) : null;
 
-            return $this->normalizeStory($story, $theme, $occasionType);
+            return $this->normalizeStory($story, $theme, $occasionType, $creator);
         })->values()->all();
+    }
+
+    private function recordView(object $story, Request $request): void
+    {
+        if ($this->isBot((string) $request->userAgent())) {
+            return;
+        }
+
+        $cacheKey = $this->buildCacheKey($story, $request);
+
+        if (Cache::has($cacheKey)) {
+            return;
+        }
+
+        Cache::put($cacheKey, true, now()->addHours(24));
+        DB::table('stories')->where('id', $story->id)->increment('view_count');
+    }
+
+    private function buildCacheKey(object $story, Request $request): string
+    {
+        $userId = $this->resolveViewerUserId($request);
+
+        if ($userId !== null) {
+            return "sv:{$story->id}:u:{$userId}";
+        }
+
+        $visitorId = (string) $request->header('X-Visitor-ID', '');
+
+        if ($visitorId !== '' && $this->isValidUuid($visitorId)) {
+            return "sv:{$story->id}:{$visitorId}";
+        }
+
+        $ipAddress = (string) $request->ip();
+        $userAgent = (string) $request->userAgent();
+
+        return 'sv:' . $story->id . ':f:' . md5($ipAddress . $userAgent);
+    }
+
+    private function resolveViewerUserId(Request $request): ?int
+    {
+        $userId = $this->currentUserId($request);
+
+        if ($userId !== null) {
+            return $userId;
+        }
+
+        $header = (string) $request->header('Authorization', '');
+        $token = stripos($header, 'Bearer ') === 0
+            ? trim(substr($header, 7))
+            : trim($header);
+
+        if ($token === '') {
+            return null;
+        }
+
+        $hashedToken = hash('sha256', $token);
+
+        $personalAccessToken = DB::table('personal_access_tokens')
+            ->select('tokenable_id', 'tokenable_type', 'expires_at')
+            ->where('token', $hashedToken)
+            ->where('tokenable_type', 'App\\Models\\User')
+            ->first();
+
+        if (!$personalAccessToken) {
+            return null;
+        }
+
+        if ($personalAccessToken->expires_at !== null) {
+            try {
+                if (now()->greaterThan(Carbon::parse($personalAccessToken->expires_at))) {
+                    return null;
+                }
+            } catch (\Throwable $exception) {
+                return null;
+            }
+        }
+
+        return (int) $personalAccessToken->tokenable_id;
+    }
+
+    private function isBot(?string $userAgent): bool
+    {
+        $normalizedUserAgent = strtolower(trim((string) $userAgent));
+
+        if ($normalizedUserAgent === '') {
+            return true;
+        }
+
+        foreach ([
+            'bot',
+            'crawler',
+            'spider',
+            'slurp',
+            'archive',
+            'facebookexternalhit',
+            'whatsapp',
+            'twitterbot',
+            'linkedinbot',
+            'telegrambot',
+            'applebot',
+            'googlebot',
+        ] as $botSignature) {
+            if (str_contains($normalizedUserAgent, $botSignature)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isValidUuid(string $value): bool
+    {
+        return preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i', $value) === 1;
     }
 
     private function validateStory(Request $request, ?int $id = null)
@@ -576,8 +718,8 @@ class StoryController extends Controller
         }
 
         if ($this->hasStoryColumn('view_count') && !$request->boolean('preview')) {
-            DB::table('stories')->where('id', $story->id)->increment('view_count');
-            $story->view_count = (int) ($story->view_count ?? 0) + 1;
+            $this->recordView($story, $request);
+            $story = $query->first() ?? $story;
         }
 
         return response()->json([

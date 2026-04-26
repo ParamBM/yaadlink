@@ -54,10 +54,11 @@ const removePublicStoryCacheById = (state, storyId) => {
 
 export const fetchStories = createAsyncThunk(
     'stories/fetchAll',
-    async (_, { getState, rejectWithValue }) => {
+    async (params = {}, { getState, rejectWithValue }) => {
         const { auth, stories } = getState();
+        const trash = !!params?.trash;
 
-        if (isFresh(stories.lastFetched) && stories.items.length > 0) {
+        if (!trash && isFresh(stories.lastFetched) && stories.items.length > 0) {
             return {
                 data: stories.items,
                 fetchedAt: stories.lastFetched,
@@ -67,6 +68,7 @@ export const fetchStories = createAsyncThunk(
         try {
             const res = await axios.get('/api/stories/', {
                 headers: { Authorization: `Bearer ${auth.token}` },
+                params,
             });
 
             return {
@@ -135,7 +137,7 @@ export const fetchStory = createAsyncThunk(
 export const fetchPublicStoryBySlug = createAsyncThunk(
     'stories/fetchPublicOne',
     async (slug, { getState, rejectWithValue }) => {
-        const { stories } = getState();
+        const { stories, auth } = getState();
         const slugKey = storySlugKey(slug);
 
         if (slugKey && isFresh(stories.publicDetailFetchedAt[slugKey]) && stories.publicStoryCache[slugKey]) {
@@ -146,7 +148,15 @@ export const fetchPublicStoryBySlug = createAsyncThunk(
         }
 
         try {
-            const res = await axios.get(`/api/stories/public/${encodeURIComponent(slugKey)}`);
+            const headers = {};
+
+            if (auth?.token) {
+                headers.Authorization = `Bearer ${auth.token}`;
+            }
+
+            const res = await axios.get(`/api/stories/public/${encodeURIComponent(slugKey)}`, {
+                headers,
+            });
 
             return {
                 data: res.data.data || null,
@@ -249,6 +259,7 @@ const storiesSlice = createSlice({
     name: 'stories',
     initialState: {
         items: [],
+        trashItems: [],
         publicItems: [],
         currentStory: null,
         currentPublicStory: null,
@@ -268,6 +279,7 @@ const storiesSlice = createSlice({
         detailError: null,
         publicDetailError: null,
         lastFetched: null,
+        trashLastFetched: null,
         publicLastFetched: null,
     },
     reducers: {
@@ -292,12 +304,20 @@ const storiesSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            .addCase(fetchStories.pending, (state) => {
-                state.loading = !isFresh(state.lastFetched);
+            .addCase(fetchStories.pending, (state, action) => {
+                const isTrash = !!action.meta.arg?.trash;
+                state.loading = isTrash ? !isFresh(state.trashLastFetched) : !isFresh(state.lastFetched);
                 state.error = null;
             })
             .addCase(fetchStories.fulfilled, (state, action) => {
+                const isTrash = !!action.meta.arg?.trash;
                 state.loading = false;
+                if (isTrash) {
+                    state.trashItems = sortStories(action.payload.data);
+                    state.trashLastFetched = action.payload.fetchedAt;
+                    return;
+                }
+
                 state.items = sortStories(action.payload.data);
                 state.lastFetched = action.payload.fetchedAt;
 

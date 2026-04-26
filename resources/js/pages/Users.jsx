@@ -347,7 +347,7 @@ function ConfirmStatusModal({ state, submitting, onClose, onConfirm }) {
             <button
                 type="button"
                 onClick={onClose}
-                className="absolute inset-0 bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
+                className="absolute inset-0 cursor-default bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
                 aria-label="Close status confirmation"
             />
 
@@ -407,7 +407,7 @@ function ConfirmDeleteModal({ state, submitting, onClose, onConfirm }) {
             <button
                 type="button"
                 onClick={onClose}
-                className="absolute inset-0 bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
+                className="absolute inset-0 cursor-default bg-black/45 backdrop-blur-sm animate-in fade-in duration-300"
                 aria-label="Close delete confirmation"
             />
 
@@ -450,11 +450,12 @@ function ConfirmDeleteModal({ state, submitting, onClose, onConfirm }) {
 function UserActionsMenu({ user, busy, inTrash, onEdit, onToggleStatus, onRecover, onDelete, onForceDelete }) {
     const buttonRef = useRef(null);
     const [open, setOpen] = useState(false);
-    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const [position, setPosition] = useState(null);
     const active = normalizeStatus(user) === 'active';
 
     useEffect(() => {
         if (!open) {
+            setPosition(null);
             return undefined;
         }
 
@@ -492,14 +493,14 @@ function UserActionsMenu({ user, busy, inTrash, onEdit, onToggleStatus, onRecove
         };
     }, [open]);
 
-    const menu = open && typeof document !== 'undefined'
+    const menu = open && position && typeof document !== 'undefined'
         ? createPortal(
             <>
                 <button
                     type="button"
                     aria-label="Close user menu"
                     onClick={() => setOpen(false)}
-                    className="fixed inset-0 z-50 bg-transparent"
+                    className="fixed inset-0 z-50 cursor-default bg-transparent"
                 />
                 <div
                     className="fixed z-[60] w-[190px] rounded-[1rem] border border-outline-variant/20 bg-surface-container-lowest p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.16)] dark:border-stone-700/60 dark:bg-stone-900 animate-in fade-in zoom-in-95 duration-200"
@@ -849,30 +850,6 @@ export default function Users() {
                 </div>
             </div>
 
-            <div className="mb-5 hidden md:inline-flex rounded-full border border-outline-variant/20 bg-surface-container-lowest p-1 dark:border-stone-700/50 dark:bg-stone-900">
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('active')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                        activeTab === 'active'
-                            ? 'bg-primary text-on-primary'
-                            : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
-                    }`}
-                >
-                    Users
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('trash')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
-                        activeTab === 'trash'
-                            ? 'bg-primary text-on-primary'
-                            : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
-                    }`}
-                >
-                    Trash
-                </button>
-            </div>
 
             {pageError && (
                 <div className="mb-5 flex items-center gap-2 rounded-[1rem] border border-error/20 bg-error-container/30 px-4 py-3 text-sm text-error dark:text-red-400">
@@ -890,6 +867,31 @@ export default function Users() {
                         placeholder="Search by name or email..."
                         className="flex-1 bg-transparent text-sm text-on-surface outline-none placeholder:text-on-surface-variant/50 dark:text-white"
                     />
+                </div>
+
+                <div className="hidden md:flex gap-1 rounded-full border border-outline-variant/20 bg-surface-container-lowest p-1 dark:border-stone-700/50 dark:bg-stone-900">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('active')}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                            activeTab === 'active'
+                                ? 'bg-primary text-on-primary'
+                                : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
+                        }`}
+                    >
+                        Users
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('trash')}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                            activeTab === 'trash'
+                                ? 'bg-primary text-on-primary'
+                                : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
+                        }`}
+                    >
+                        Trash
+                    </button>
                 </div>
 
                 <select

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router';
 import {
     clearAiError,
     clearError,
@@ -205,13 +206,23 @@ function EmptyState({ onAdd, isAdmin }) {
                     ? 'Create the first live story or keep a private version hidden until you are ready to publish it.'
                     : 'Create your first story. Once you save it from your authenticated account, it goes live on your microsite.'}
             </p>
-            <button
-                onClick={onAdd}
-                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_10px_30px_-10px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
-            >
-                <span className="material-symbols-outlined text-[1.1rem]">add</span>
-                Add Story
-            </button>
+            {isAdmin ? (
+                <button
+                    onClick={onAdd}
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_10px_30px_-10px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
+                >
+                    <span className="material-symbols-outlined text-[1.1rem]">add</span>
+                    Add Story
+                </button>
+            ) : (
+                <Link
+                    to="/onboarding"
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_10px_30px_-10px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
+                >
+                    <span className="material-symbols-outlined text-[1.1rem]">add</span>
+                    Add Story
+                </Link>
+            )}
         </div>
     );
 }
@@ -228,6 +239,7 @@ function StoryModal({
 }) {
     const dispatch = useDispatch();
     const isEdit = !!initialData;
+    const isRestrictedUserEdit = !isAdmin && isEdit;
     const [isVisible, setIsVisible] = useState(false);
     const [formError, setFormError] = useState('');
     const [isSlugManual, setIsSlugManual] = useState(!!initialData?.slug);
@@ -593,6 +605,8 @@ function StoryModal({
                                     />
                                 </div>
 
+                                {!isRestrictedUserEdit && (
+                                    <>
                                 <div className="flex flex-col gap-1.5 sm:col-span-2">
                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                                         Slug
@@ -659,6 +673,8 @@ function StoryModal({
                                             : 'Choose a theme directly to auto-fill the occasion when needed.'}
                                     </p>
                                 </div>
+                                    </>
+                                )}
 
                                 <div className="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
@@ -690,7 +706,7 @@ function StoryModal({
                                         <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                                             Story
                                         </label>
-                                        {form.ai_polished && (
+                                        {!isRestrictedUserEdit && form.ai_polished && (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary dark:bg-red-400/10 dark:text-red-300">
                                                 <span className="material-symbols-outlined text-[0.85rem]">auto_awesome</span>
                                                 AI Enhanced
@@ -706,7 +722,7 @@ function StoryModal({
                                     />
 
                                     {/* ── Enhance button ── */}
-                                    <div className="flex items-center gap-3">
+                                    {!isRestrictedUserEdit && <div className="flex items-center gap-3">
                                         <button
                                             type="button"
                                             onClick={handleEnhance}
@@ -735,10 +751,10 @@ function StoryModal({
                                                 {aiError}
                                             </p>
                                         )}
-                                    </div>
+                                    </div>}
 
                                     {/* ── AI suggestion preview panel ── */}
-                                    {aiSuggestion && (
+                                    {!isRestrictedUserEdit && aiSuggestion && (
                                         <div className="mt-1 overflow-hidden rounded-2xl border border-primary/20 bg-primary/5 dark:border-red-400/20 dark:bg-red-400/5">
                                             <div className="flex items-center justify-between gap-3 border-b border-primary/15 px-4 py-2.5 dark:border-red-400/15">
                                                 <div className="flex items-center gap-2">
@@ -782,6 +798,7 @@ function StoryModal({
                         </div>
 
                         <div className="space-y-5">
+                            {!isRestrictedUserEdit && (
                             <div className="rounded-[1.75rem] border border-outline-variant/15 bg-surface-container p-5 dark:border-stone-700/50 dark:bg-stone-800">
                                 <p className="font-headline text-base font-semibold text-on-surface dark:text-white">Publishing</p>
                                 <p className="mt-1 text-sm text-on-surface-variant dark:text-stone-400">
@@ -830,6 +847,7 @@ function StoryModal({
                                     </button>
                                 </div>
                             </div>
+                            )}
 
                             <div className="rounded-[1.75rem] border border-outline-variant/15 bg-surface-container p-5 dark:border-stone-700/50 dark:bg-stone-800">
                                 <div className="grid gap-4">
@@ -853,6 +871,7 @@ function StoryModal({
                                         />
                                     </div>
 
+                                    {!isRestrictedUserEdit && (
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <button
                                             type="button"
@@ -886,6 +905,7 @@ function StoryModal({
                                             <span className="material-symbols-outlined">visibility</span>
                                         </button>
                                     </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -950,7 +970,7 @@ function StoryModal({
                                                 />
                                             </div>
 
-                                            <div className="flex flex-col gap-1.5">
+                                            <div className="flex flex-col gap-1.5 sm:col-span-2">
                                                 <label className="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
                                                     Event Date
                                                 </label>
@@ -962,12 +982,16 @@ function StoryModal({
                                                 />
                                             </div>
 
-                                            <div className="flex flex-col gap-1.5 mt-2">
-                                                <ImageUploader
-                                                    label="Milestone Image (Optional)"
+                                            <div className="flex flex-col gap-1.5 mt-2 sm:col-span-2">
+                                                <label className="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                                                    Milestone Image URL
+                                                </label>
+                                                <input
+                                                    type="url"
                                                     value={milestone.image_url}
-                                                    onUploadSuccess={(url) => updateMilestone(index, 'image_url', url)}
-                                                    onRemove={() => updateMilestone(index, 'image_url', '')}
+                                                    onChange={(event) => updateMilestone(index, 'image_url', event.target.value)}
+                                                    placeholder="https://example.com/milestone-image.jpg"
+                                                    className="w-full rounded-2xl border border-outline-variant/30 bg-surface px-4 py-2.5 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary/50 dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-red-400/50"
                                                 />
                                             </div>
 
@@ -1036,11 +1060,15 @@ function StoryModal({
 
                                         <div className="grid gap-3 sm:grid-cols-2">
                                             <div className="flex flex-col gap-1.5 sm:col-span-2">
-                                                <ImageUploader
-                                                    label="Image"
+                                                <label className="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                                                    Image URL *
+                                                </label>
+                                                <input
+                                                    type="url"
                                                     value={image.url}
-                                                    onUploadSuccess={(url) => updateImage(index, 'url', url)}
-                                                    onRemove={() => updateImage(index, 'url', '')}
+                                                    onChange={(event) => updateImage(index, 'url', event.target.value)}
+                                                    placeholder="https://example.com/story-image.jpg"
+                                                    className="w-full rounded-2xl border border-outline-variant/30 bg-surface px-4 py-2.5 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary/50 dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-red-400/50"
                                                 />
                                             </div>
 
@@ -1091,7 +1119,7 @@ function StoryModal({
     );
 }
 
-function DeleteDialog({ item, onClose, onConfirm, submitting }) {
+function DeleteDialog({ item, isAdmin, onClose, onConfirm, submitting }) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -1109,10 +1137,14 @@ function DeleteDialog({ item, onClose, onConfirm, submitting }) {
                     <span className="material-symbols-outlined text-error dark:text-red-400 text-[1.5rem]">delete</span>
                 </div>
                 <h3 className="mb-2 font-headline text-base font-bold text-on-surface dark:text-white">
-                    Delete "{item?.title || `${item?.person_one_name || ''} & ${item?.person_two_name || ''}`}"?
+                    {isAdmin
+                        ? `Move "${item?.title || `${item?.person_one_name || ''} & ${item?.person_two_name || ''}`}" to trash?`
+                        : `Delete "${item?.title || `${item?.person_one_name || ''} & ${item?.person_two_name || ''}`}"?`}
                 </h3>
                 <p className="mb-6 font-body text-sm text-on-surface-variant dark:text-stone-400">
-                    This soft-deletes the story record. It cannot be undone from the UI.
+                    {isAdmin
+                        ? 'This soft-deletes the story and removes it from the active list.'
+                        : 'This will remove the story from your collection. You can restore it from the trash later if needed.'}
                 </p>
                 <div className="flex gap-3">
                     <button
@@ -1126,7 +1158,11 @@ function DeleteDialog({ item, onClose, onConfirm, submitting }) {
                         disabled={submitting}
                         className="flex flex-1 items-center justify-center gap-2 rounded-full bg-error py-3 text-sm font-bold text-on-error transition-all hover:scale-[1.02] active:scale-98 disabled:opacity-50"
                     >
-                        {submitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-on-error/30 border-t-on-error" /> : 'Delete'}
+                        {submitting ? (
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-on-error/30 border-t-on-error" />
+                        ) : (
+                            isAdmin ? 'Move to Trash' : 'Delete Story'
+                        )}
                     </button>
                 </div>
             </div>
@@ -1134,13 +1170,14 @@ function DeleteDialog({ item, onClose, onConfirm, submitting }) {
     );
 }
 
-function StoryActionsMenu({ item, busy, isAdmin, onEdit, onDelete, onTogglePublish }) {
+function StoryActionsMenu({ item, busy, isAdmin, inTrash, onEdit, onDelete, onTogglePublish }) {
     const [open, setOpen] = useState(false);
-    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const [position, setPosition] = useState(null);
     const buttonRef = React.useRef(null);
 
     useEffect(() => {
         if (!open) {
+            setPosition(null);
             return undefined;
         }
 
@@ -1151,7 +1188,8 @@ function StoryActionsMenu({ item, busy, isAdmin, onEdit, onDelete, onTogglePubli
             }
 
             const width = 210;
-            const height = isAdmin ? 156 : 112;
+            const actionCount = 2 + (isAdmin ? 1 : 0) + (!inTrash ? 1 : 0);
+            const height = 16 + actionCount * 44;
             const left = Math.min(window.innerWidth - width - 12, Math.max(12, rect.right - width));
             const top = rect.bottom + height > window.innerHeight
                 ? Math.max(12, rect.top - height - 8)
@@ -1178,19 +1216,32 @@ function StoryActionsMenu({ item, busy, isAdmin, onEdit, onDelete, onTogglePubli
         };
     }, [open, isAdmin]);
 
-    const menu = open && typeof document !== 'undefined'
+    const menu = open && position && typeof document !== 'undefined'
         ? createPortal(
             <>
                 <button
                     type="button"
                     aria-label="Close story menu"
                     onClick={() => setOpen(false)}
-                    className="fixed inset-0 z-50 bg-transparent"
+                    className="fixed inset-0 z-50 cursor-default bg-transparent"
                 />
                 <div
                     className="fixed z-[60] w-[210px] rounded-[1rem] border border-outline-variant/20 bg-surface-container-lowest p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.16)] dark:border-stone-700/60 dark:bg-stone-900"
                     style={{ top: `${position.top}px`, left: `${position.left}px` }}
                 >
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setOpen(false);
+                            window.open(`/story/${encodeURIComponent(item?.slug || '')}`, '_blank', 'noopener,noreferrer');
+                        }}
+                        disabled={!item?.slug || !item?.is_published}
+                        className="flex w-full items-center gap-2.5 rounded-[0.85rem] px-3 py-2.5 text-left text-sm font-medium text-on-surface transition-colors hover:bg-surface-container disabled:opacity-50 dark:text-white dark:hover:bg-stone-800"
+                    >
+                        <span className="material-symbols-outlined text-[18px] text-tertiary">visibility</span>
+                        View story
+                    </button>
+
                     <button
                         type="button"
                         onClick={() => {
@@ -1220,18 +1271,20 @@ function StoryActionsMenu({ item, busy, isAdmin, onEdit, onDelete, onTogglePubli
                         </button>
                     )}
 
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setOpen(false);
-                            onDelete(item);
-                        }}
-                        disabled={busy}
-                        className="flex w-full items-center gap-2.5 rounded-[0.85rem] px-3 py-2.5 text-left text-sm font-medium text-error transition-colors hover:bg-error-container/40 disabled:opacity-60 dark:text-red-300 dark:hover:bg-red-950/40"
-                    >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                        Delete story
-                    </button>
+                    {!inTrash && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOpen(false);
+                                onDelete(item);
+                            }}
+                            disabled={busy}
+                            className="flex w-full items-center gap-2.5 rounded-[0.85rem] px-3 py-2.5 text-left text-sm font-medium text-error transition-colors hover:bg-error-container/40 disabled:opacity-60 dark:text-red-300 dark:hover:bg-red-950/40"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                            {isAdmin ? 'Move to trash' : 'Delete story'}
+                        </button>
+                    )}
                 </div>
             </>,
             document.body
@@ -1262,7 +1315,7 @@ function StoryActionsMenu({ item, busy, isAdmin, onEdit, onDelete, onTogglePubli
 
 export default function Stories({ mode = 'auto' }) {
     const dispatch = useDispatch();
-    const { items, loading, submitting, error } = useSelector((state) => state.stories);
+    const { items, trashItems, loading, submitting, error } = useSelector((state) => state.stories);
     const { items: themes } = useSelector((state) => state.themes);
     const { items: occasionTypes } = useSelector((state) => state.occasionTypes);
     const { user, role } = useSelector((state) => state.auth);
@@ -1272,6 +1325,7 @@ export default function Stories({ mode = 'auto' }) {
     const [pendingId, setPendingId] = useState(null);
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [activeTab, setActiveTab] = useState('active');
 
     const isAdmin = mode === 'admin'
         ? true
@@ -1284,6 +1338,7 @@ export default function Stories({ mode = 'auto' }) {
         : 'Create, edit, and manage only the stories attached to your account. New stories are saved under your user profile and go live automatically.';
     const createButtonLabel = isAdmin ? 'Add New Story' : 'Create Story';
     const errorText = getErrorText(error);
+    const listItems = activeTab === 'trash' ? trashItems : items;
     const statusTabs = [
         { value: 'all', label: 'All' },
         { value: 'published', label: 'Live' },
@@ -1291,25 +1346,27 @@ export default function Stories({ mode = 'auto' }) {
     ];
 
     useEffect(() => {
-        dispatch(fetchStories());
+        dispatch(fetchStories(isAdmin && activeTab === 'trash' ? { trash: true } : {}));
         dispatch(fetchThemes());
         dispatch(fetchOccasionTypes());
-    }, [dispatch]);
+    }, [activeTab, dispatch, isAdmin]);
 
     const stats = useMemo(() => {
-        const published = items.filter((item) => item?.is_published).length;
-        const hidden = items.filter((item) => !item?.is_published).length;
+        const published = listItems.filter((item) => item?.is_published).length;
+        const hidden = listItems.filter((item) => !item?.is_published).length;
+        const totalViews = listItems.reduce((acc, item) => acc + Number(item?.view_count ?? 0), 0);
 
         return {
-            total: items.length,
+            total: listItems.length,
             published,
             hidden,
+            totalViews,
         };
-    }, [items]);
+    }, [listItems]);
 
     const filtered = useMemo(
         () =>
-            items
+            listItems
                 .filter(Boolean)
                 .filter((item) => {
                     if (filterStatus === 'published') {
@@ -1338,7 +1395,7 @@ export default function Stories({ mode = 'auto' }) {
 
                     return haystack.includes(search.toLowerCase());
                 }),
-        [items, filterStatus, search]
+        [listItems, filterStatus, search]
     );
 
     const openCreate = () => {
@@ -1413,14 +1470,25 @@ export default function Stories({ mode = 'auto' }) {
                         {pageDescription}
                     </p>
                 </div>
-                <button
-                    onClick={openCreate}
-                    className="hidden md:flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
-                >
-                    <span className="material-symbols-outlined text-[1.1rem]">add</span>
-                    {createButtonLabel}
-                </button>
+                {isAdmin && activeTab !== 'trash' ? (
+                    <button
+                        onClick={openCreate}
+                        className="hidden md:flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
+                    >
+                        <span className="material-symbols-outlined text-[1.1rem]">add</span>
+                        {createButtonLabel}
+                    </button>
+                ) : !isAdmin ? (
+                    <Link
+                        to="/onboarding"
+                        className="hidden md:flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-primary to-primary-container px-7 py-3 text-sm font-bold text-on-primary shadow-[0_20px_40px_-15px_rgba(183,16,42,0.3)] transition-all hover:scale-[1.02] active:scale-98"
+                    >
+                        <span className="material-symbols-outlined text-[1.1rem]">add</span>
+                        {createButtonLabel}
+                    </Link>
+                ) : null}
             </div>
+
 
             <div className="mb-6 grid grid-cols-3 gap-2 md:gap-4">
                 <div className="rounded-[1.2rem] md:rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-3 md:p-5 dark:border-stone-700/50 dark:bg-stone-900 text-center md:text-left">
@@ -1432,8 +1500,12 @@ export default function Stories({ mode = 'auto' }) {
                     <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-tertiary dark:text-tertiary-fixed">{stats.published}</p>
                 </div>
                 <div className="rounded-[1.2rem] md:rounded-[1.6rem] border border-outline-variant/15 bg-surface-container-lowest p-3 md:p-5 dark:border-stone-700/50 dark:bg-stone-900 text-center md:text-left">
-                    <p className="font-label text-[10px] md:text-xs font-semibold uppercase tracking-wider text-on-surface-variant truncate">Hidden</p>
-                    <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-secondary dark:text-secondary-fixed">{stats.hidden}</p>
+                    <p className="font-label text-[10px] md:text-xs font-semibold uppercase tracking-wider text-on-surface-variant truncate">
+                        {activeTab === 'trash' ? 'Hidden' : 'Total Views'}
+                    </p>
+                    <p className="mt-1 md:mt-3 font-headline text-xl md:text-3xl font-bold text-secondary dark:text-secondary-fixed">
+                        {activeTab === 'trash' ? stats.hidden : stats.totalViews}
+                    </p>
                 </div>
             </div>
 
@@ -1464,12 +1536,21 @@ export default function Stories({ mode = 'auto' }) {
                         </button>
                     ))}
                 </div>
-                <button
-                    onClick={openCreate}
-                    className="h-9 w-9 flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg active:scale-95 transition-transform"
-                >
-                    <span className="material-symbols-outlined text-[1.2rem]">add</span>
-                </button>
+                {isAdmin && activeTab !== 'trash' ? (
+                    <button
+                        onClick={openCreate}
+                        className="h-9 w-9 flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg active:scale-95 transition-transform"
+                    >
+                        <span className="material-symbols-outlined text-[1.2rem]">add</span>
+                    </button>
+                ) : !isAdmin ? (
+                    <Link
+                        to="/onboarding"
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary shadow-lg transition-transform active:scale-95"
+                    >
+                        <span className="material-symbols-outlined text-[1.2rem]">add</span>
+                    </Link>
+                ) : null}
             </div>
 
             <div className="mb-5 flex flex-wrap items-center gap-3">
@@ -1483,12 +1564,39 @@ export default function Stories({ mode = 'auto' }) {
                     />
                 </div>
 
+                {isAdmin && (
+                    <div className="hidden md:flex gap-1 rounded-full border border-outline-variant/20 bg-surface-container-lowest p-1 dark:border-stone-700/50 dark:bg-stone-900">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('active')}
+                            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                                activeTab === 'active'
+                                    ? 'bg-primary text-on-primary'
+                                    : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
+                            }`}
+                        >
+                            Stories
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('trash')}
+                            className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                                activeTab === 'trash'
+                                    ? 'bg-primary text-on-primary'
+                                    : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
+                            }`}
+                        >
+                            Trash
+                        </button>
+                    </div>
+                )}
+
                 <div className="hidden md:flex gap-1 rounded-full bg-surface-container p-1 dark:bg-stone-800">
                     {statusTabs.map((tab) => (
                         <button
                             key={tab.value}
                             onClick={() => setFilterStatus(tab.value)}
-                            className={`rounded-full px-4 py-1.5 text-xs font-semibold capitalize transition-all ${
+                            className={`rounded-full px-4 py-2 text-sm font-semibold capitalize transition-all ${
                                 filterStatus === tab.value
                                     ? 'bg-surface-container-lowest text-on-surface shadow-sm dark:bg-stone-700 dark:text-white'
                                     : 'text-on-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:text-white'
@@ -1505,7 +1613,7 @@ export default function Stories({ mode = 'auto' }) {
                     <span className="h-10 w-10 animate-spin rounded-full border-[3px] border-outline-variant/30 border-t-primary" />
                     <p className="font-body text-sm text-on-surface-variant dark:text-stone-400">Loading stories...</p>
                 </div>
-            ) : filtered.length === 0 && !search && filterStatus === 'all' ? (
+            ) : filtered.length === 0 && !search && filterStatus === 'all' && activeTab !== 'trash' ? (
                 <EmptyState onAdd={openCreate} isAdmin={isAdmin} />
             ) : (
                 <div className="rounded-[2rem] border border-outline-variant/10 bg-surface-container-lowest p-6 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.04)] dark:border-stone-700/30 dark:bg-stone-900 dark:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.5)]">
@@ -1544,11 +1652,13 @@ export default function Stories({ mode = 'auto' }) {
                                                     <p className="truncate text-sm text-on-surface-variant dark:text-stone-400">
                                                         {item?.tagline || item?.slug}
                                                     </p>
-                                                    <p className="mt-1 text-xs text-on-surface-variant/80 dark:text-stone-500">
-                                                        {isAdmin
-                                                            ? (String(item?.user_id) === String(user?.id) ? 'Created by you' : `Created by user #${item?.user_id ?? '-'}`)
-                                                            : 'Linked to your account'}
-                                                    </p>
+                                                    {isAdmin && (
+                                                        <p className="mt-1 text-xs text-on-surface-variant/80 dark:text-stone-500">
+                                                            {String(item?.user_id) === String(user?.id)
+                                                                ? 'Created by you'
+                                                                : `Created by ${item?.creator_name || `user #${item?.user_id ?? '-'}`}`}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
@@ -1585,6 +1695,7 @@ export default function Stories({ mode = 'auto' }) {
                                                     item={item}
                                                     busy={pendingId === item.id}
                                                     isAdmin={isAdmin}
+                                                    inTrash={activeTab === 'trash'}
                                                     onEdit={openEdit}
                                                     onDelete={setDeleteTarget}
                                                     onTogglePublish={handleTogglePublish}
@@ -1599,7 +1710,7 @@ export default function Stories({ mode = 'auto' }) {
 
                     <div className="mt-5 flex items-center justify-between border-t border-outline-variant/15 pt-5 dark:border-stone-700/50">
                         <span className="font-body text-sm text-on-surface-variant dark:text-stone-400">
-                            Showing {filtered.length} of {items.length} stories
+                            Showing {filtered.length} of {listItems.length} stories
                         </span>
                     </div>
                 </div>
@@ -1633,6 +1744,7 @@ export default function Stories({ mode = 'auto' }) {
             {deleteTarget && (
                 <DeleteDialog
                     item={deleteTarget}
+                    isAdmin={isAdmin}
                     onClose={() => setDeleteTarget(null)}
                     onConfirm={handleDelete}
                     submitting={submitting && pendingId === deleteTarget.id}

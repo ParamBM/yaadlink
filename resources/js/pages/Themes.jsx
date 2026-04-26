@@ -680,10 +680,11 @@ function DeleteDialog({ item, onClose, onConfirm, submitting }) {
 function ThemeActionsMenu({ item, busy, onEdit, onDelete }) {
     const buttonRef = useRef(null);
     const [open, setOpen] = useState(false);
-    const [position, setPosition] = useState({ top: 0, left: 0 });
+    const [position, setPosition] = useState(null);
 
     useEffect(() => {
         if (!open) {
+            setPosition(null);
             return undefined;
         }
 
@@ -721,14 +722,14 @@ function ThemeActionsMenu({ item, busy, onEdit, onDelete }) {
         };
     }, [open]);
 
-    const menu = open && typeof document !== 'undefined'
+    const menu = open && position && typeof document !== 'undefined'
         ? createPortal(
             <>
                 <button
                     type="button"
                     aria-label="Close theme menu"
                     onClick={() => setOpen(false)}
-                    className="fixed inset-0 z-50 bg-transparent"
+                    className="fixed inset-0 z-50 cursor-default bg-transparent"
                 />
                 <div
                     className="fixed z-[60] w-[190px] rounded-[1rem] border border-outline-variant/20 bg-surface-container-lowest p-1.5 shadow-[0_18px_40px_rgba(0,0,0,0.16)] dark:border-stone-700/60 dark:bg-stone-900"

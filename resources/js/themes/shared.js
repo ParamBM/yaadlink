@@ -2,6 +2,24 @@ const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !=
 
 const firstString = (...values) => values.find(isNonEmptyString)?.trim() || '';
 
+const toArray = (value) => {
+    if (Array.isArray(value)) {
+        return value;
+    }
+
+    if (isNonEmptyString(value)) {
+        try {
+            const parsed = JSON.parse(value);
+
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    return [];
+};
+
 /**
  * Format a raw date string (e.g. "2023-10-10") into a human-readable form
  * like "OCTOBER 10, 2023". Falls back to the raw string if parsing fails.
@@ -137,12 +155,12 @@ export function getThemeStoryContent(data = {}) {
 
     const heroNames = participantNames.length > 0 ? participantNames.join(' & ') : 'Your Story';
 
-    const milestones = (Array.isArray(data.milestones) ? data.milestones : [])
+    const milestones = toArray(data.milestones)
         .map(normalizeMilestone)
         .filter(Boolean)
         .slice(0, 6);
 
-    const images = (Array.isArray(data.images) ? data.images : [])
+    const images = toArray(data.images)
         .map(normalizeImage)
         .filter((image) => image?.src)
         .slice(0, 4);
@@ -170,7 +188,7 @@ export function getThemeStoryContent(data = {}) {
             'Every theme receives the same story data shape and turns it into a tailored visual experience.'
         ),
         // Hero / cover image URL (API field: cover_image_url)
-        coverImageUrl: firstString(data.cover_image_url, data.coverImage, data.heroImage),
+        coverImageUrl: firstString(data.cover_image_url, data.coverImage, data.heroImage, images[0]?.src),
         // Closing / final message (API field: final_message)
         finalMessage: firstString(data.final_message, data.finalMessage, data.closing),
         // Initials for signing off (e.g. "P & A")

@@ -248,6 +248,10 @@
         font-family: var(--font-headline-family);
     }
 
+    button {
+        cursor: pointer;
+    }
+
     button,
     input,
     textarea,
