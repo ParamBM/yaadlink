@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\GeminiStoryEnhancer;
+use App\Services\UserActivityLogger;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,46 @@ use Illuminate\Validation\Rule;
 
 class StoryController extends Controller
 {
+    private function activityActorOverride(Request $request): ?array
+    {
+        $userId = $this->currentUserId($request);
+
+        if ($userId !== null) {
+            return null;
+        }
+
+        return [
+            'id' => 0,
+            'role' => 'guest',
+            'type' => 'guest',
+        ];
+    }
+
+    private function activityLog(
+        Request $request,
+        string $activity,
+        string $module,
+        string $tableName,
+        ?int $recordId = null,
+        ?array $changedFields = null,
+        mixed $oldValues = null,
+        mixed $newValues = null,
+        ?string $note = null
+    ): void {
+        UserActivityLogger::log(
+            $request,
+            $activity,
+            $module,
+            $tableName,
+            $recordId,
+            $changedFields,
+            $oldValues,
+            $newValues,
+            $note,
+            $this->activityActorOverride($request)
+        );
+    }
+
     private function hasStoryColumn(string $column): bool
     {
         return Schema::hasTable('stories') && Schema::hasColumn('stories', $column);
@@ -670,6 +711,26 @@ class StoryController extends Controller
         $id = DB::table('stories')->insertGetId($insertData);
         $story = DB::table('stories')->where('id', $id)->first();
 
+        $this->activityLog(
+            $request,
+            'create',
+            'stories',
+            'stories',
+            $id,
+            array_keys($insertData),
+            null,
+            [
+                'story_id' => $id,
+                'occasion_type_id' => $insertData['occasion_type_id'] ?? null,
+                'theme_id' => $insertData['theme_id'] ?? null,
+                'slug' => $insertData['slug'] ?? null,
+                'person_one_name' => $insertData['person_one_name'] ?? null,
+                'person_two_name' => $insertData['person_two_name'] ?? null,
+                'is_published' => $insertData['is_published'] ?? null,
+            ],
+            'Story created'
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Story created successfully',
@@ -752,6 +813,7 @@ class StoryController extends Controller
         }
 
         $data = $v->validated();
+        $before = (array) $story;
         $updates = [
             'updated_at' => Carbon::now(),
         ];
@@ -812,6 +874,30 @@ class StoryController extends Controller
         DB::table('stories')->where('id', $id)->update($updates);
         $updatedStory = DB::table('stories')->where('id', $id)->first();
 
+        $this->activityLog(
+            $request,
+            'update',
+            'stories',
+            'stories',
+            (int) $id,
+            array_keys($updates),
+            [
+                'story_id' => (int) $id,
+                'occasion_type_id' => $before['occasion_type_id'] ?? null,
+                'theme_id' => $before['theme_id'] ?? null,
+                'slug' => $before['slug'] ?? null,
+                'is_published' => $before['is_published'] ?? null,
+            ],
+            [
+                'story_id' => (int) $id,
+                'occasion_type_id' => $updatedStory->occasion_type_id ?? null,
+                'theme_id' => $updatedStory->theme_id ?? null,
+                'slug' => $updatedStory->slug ?? null,
+                'is_published' => $updatedStory->is_published ?? null,
+            ],
+            'Story updated'
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Story updated successfully',
@@ -840,6 +926,24 @@ class StoryController extends Controller
         } else {
             DB::table('stories')->where('id', $id)->delete();
         }
+
+        $this->activityLog(
+            $request,
+            'delete',
+            'stories',
+            'stories',
+            (int) $id,
+            ['deleted_at'],
+            [
+                'story_id' => (int) $id,
+                'occasion_type_id' => $story->occasion_type_id ?? null,
+                'theme_id' => $story->theme_id ?? null,
+                'slug' => $story->slug ?? null,
+                'is_published' => $story->is_published ?? null,
+            ],
+            null,
+            'Story deleted'
+        );
 
         return response()->json([
             'success' => true,

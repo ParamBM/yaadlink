@@ -33,7 +33,9 @@ export default function Onboarding() {
 
     const handleContinue = () => {
         if (selectedCelebrating) {
-            navigate('/onboarding/story', { state: { occasion_type_id: selectedCelebrating } });
+            navigate(`/onboarding/story?occasion=${encodeURIComponent(selectedCelebrating)}`, {
+                state: { occasion_type_id: selectedCelebrating },
+            });
         }
     };
 

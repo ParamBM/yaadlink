@@ -20,15 +20,15 @@ function GalleryItem({ image, index }) {
     if (!image?.src) return null;
 
     return (
-        <div className="break-inside-avoid relative group rounded-xl overflow-hidden bg-[#fbeae9]">
+        <div className="break-inside-avoid relative group rounded-2xl overflow-hidden bg-[#fdf2f1] shadow-sm hover:shadow-xl transition-all duration-500">
             <img
                 alt={image.alt}
                 src={image.src}
-                className="w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-auto object-cover transform transition-transform duration-1000 group-hover:scale-110"
             />
             {image.caption && (
-                <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <p className="text-[16px] leading-[1.6] font-normal text-white">{image.caption}</p>
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                    <p className="text-[14px] font-medium text-white translate-y-4 group-hover:translate-y-0 transition-transform duration-500">{image.caption}</p>
                 </div>
             )}
         </div>
@@ -149,6 +149,8 @@ export default function RoseGold({ data }) {
                     font-family: 'Plus Jakarta Sans', sans-serif;
                     -webkit-font-smoothing: antialiased;
                     min-height: 100vh;
+                    overflow-x: hidden;
+                    width: 100%;
                 }
                 .rg-root ::selection {
                     background: #ffdcbd;
@@ -173,17 +175,21 @@ export default function RoseGold({ data }) {
                     backdrop-filter: blur(24px);
                     -webkit-backdrop-filter: blur(24px);
                     border: 1px solid rgba(255,255,255,0.20);
-                    box-shadow: 0 4px 20px -1px rgba(212,163,115,0.04);
-                    border-radius: 0.75rem;
-                    padding: 2rem;
-                    transition: background 0.3s;
+                    box-shadow: 0 10px 30px -10px rgba(212,163,115,0.15);
+                    border-radius: 1.25rem;
+                    padding: 2.5rem;
+                    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
                 }
                 .rg-milestone-card:hover {
-                    background: rgba(255,255,255,0.80);
+                    background: rgba(255,255,255,0.95);
+                    transform: translateY(-4px);
+                    box-shadow: 0 20px 40px -12px rgba(212,163,115,0.25);
+                    border-color: rgba(212,163,115,0.3);
                 }
                 .rg-milestone-dot {
                     position: absolute;
-                    left: -41px;
+                    left: -57px; /* Centered on the line: (48px width / 2) + 32px padding = 56px, plus 1px for border centering */
+                    top: 2rem;
                     background: #ffffff;
                     border: 2px solid #d4a373;
                     border-radius: 9999px;
@@ -192,7 +198,19 @@ export default function RoseGold({ data }) {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    box-shadow: 0 4px 10px -1px rgba(212,163,115,0.2);
+                    box-shadow: 0 4px 15px -1px rgba(212,163,115,0.3);
+                    z-index: 10;
+                    transition: all 0.3s ease;
+                }
+                @media (max-width: 640px) {
+                    .rg-milestone-dot {
+                        width: 2.5rem;
+                        height: 2.5rem;
+                        left: -45px;
+                    }
+                    .rg-milestone-card {
+                        padding: 1.5rem;
+                    }
                 }
             `}</style>
 
@@ -241,12 +259,13 @@ export default function RoseGold({ data }) {
                         HERO SECTION
                     ════════════════════════════════════════ */}
                     <section
-                        className="relative flex items-center justify-center overflow-hidden rounded-xl"
+                        className="relative flex items-center justify-center overflow-hidden rounded-[1.5rem] sm:rounded-[2rem]"
                         style={{
-                            minHeight: '870px',
-                            margin: '0 2.5rem',
-                            marginTop: '2rem',
-                            background: '#f5e4e4',
+                            minHeight: 'min(70vh, 800px)',
+                            margin: '0 1rem sm:1.5rem',
+                            marginTop: '1rem sm:1.5rem',
+                            background: '#fdf2f1',
+                            boxShadow: '0 30px 60px -12px rgba(212,163,115,0.12)',
                         }}
                     >
                         {/* Cover image */}
@@ -274,11 +293,11 @@ export default function RoseGold({ data }) {
                         />
 
                         {/* Hero card */}
-                        <div className="relative z-10 rg-hero-card rounded-xl text-center max-w-2xl mx-auto m-8" style={{ padding: '40px' }}>
+                        <div className="relative z-10 rg-hero-card rounded-2xl text-center w-[calc(100%-2rem)] sm:w-auto max-w-2xl mx-4 sm:mx-auto my-8" style={{ padding: 'clamp(24px, 5vw, 48px)' }}>
                             <h1
                                 style={{
                                     fontFamily: 'Epilogue, serif',
-                                    fontSize: '48px',
+                                    fontSize: 'clamp(32px, 8vw, 48px)',
                                     lineHeight: '1.1',
                                     letterSpacing: '-0.02em',
                                     fontWeight: '600',
@@ -292,7 +311,7 @@ export default function RoseGold({ data }) {
                                 <p
                                     style={{
                                         fontFamily: 'Plus Jakarta Sans, sans-serif',
-                                        fontSize: '18px',
+                                        fontSize: 'clamp(14px, 4vw, 18px)',
                                         lineHeight: '1.6',
                                         color: '#50453b',
                                         marginBottom: '1.5rem',
@@ -397,12 +416,12 @@ export default function RoseGold({ data }) {
                             <div
                                 style={{
                                     position: 'relative',
-                                    borderLeft: '2px solid rgba(212,196,183,0.30)',
-                                    paddingLeft: '2rem',
-                                    marginLeft: '1.25rem',
+                                    borderLeft: '1px solid rgba(212,163,115,0.40)',
+                                    paddingLeft: '3rem',
+                                    marginLeft: '1.5rem',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: '4rem',
+                                    gap: '5rem',
                                 }}
                             >
                                 {content.milestones.map((milestone, index) => (
@@ -425,14 +444,15 @@ export default function RoseGold({ data }) {
                                         <div className="rg-milestone-card">
                                             {milestone.date && (
                                                 <span
-                                                    className="block mb-2"
+                                                    className="block mb-3"
                                                     style={{
                                                         fontFamily: 'Epilogue, serif',
-                                                        fontSize: '12px',
+                                                        fontSize: '13px',
                                                         lineHeight: '1',
-                                                        letterSpacing: '0.1em',
-                                                        fontWeight: '600',
-                                                        color: '#7d562d',
+                                                        letterSpacing: '0.15em',
+                                                        fontWeight: '700',
+                                                        color: '#d4a373',
+                                                        textTransform: 'uppercase',
                                                     }}
                                                 >
                                                     {formatMilestoneDate(milestone.date) || milestone.date}
@@ -441,11 +461,12 @@ export default function RoseGold({ data }) {
                                             <h3
                                                 style={{
                                                     fontFamily: 'Epilogue, serif',
-                                                    fontSize: '24px',
-                                                    lineHeight: '1.3',
+                                                    fontSize: '28px',
+                                                    lineHeight: '1.2',
                                                     fontWeight: '600',
                                                     color: '#221a1a',
-                                                    marginBottom: '0.5rem',
+                                                    marginBottom: '1rem',
+                                                    letterSpacing: '-0.02em',
                                                 }}
                                             >
                                                 {milestone.title}
@@ -454,9 +475,10 @@ export default function RoseGold({ data }) {
                                                 <p
                                                     style={{
                                                         fontFamily: 'Plus Jakarta Sans, sans-serif',
-                                                        fontSize: '16px',
-                                                        lineHeight: '1.6',
+                                                        fontSize: '17px',
+                                                        lineHeight: '1.7',
                                                         color: '#50453b',
+                                                        marginBottom: milestone.imageUrl ? '1.5rem' : '0',
                                                     }}
                                                 >
                                                     {milestone.description}
@@ -464,12 +486,14 @@ export default function RoseGold({ data }) {
                                             )}
                                             {/* Milestone image (optional) */}
                                             {milestone.imageUrl && (
-                                                <img
-                                                    src={milestone.imageUrl}
-                                                    alt={milestone.title}
-                                                    className="mt-4 w-full rounded-xl object-cover"
-                                                    style={{ maxHeight: '260px' }}
-                                                />
+                                                <div className="overflow-hidden rounded-2xl shadow-md">
+                                                    <img
+                                                        src={milestone.imageUrl}
+                                                        alt={milestone.title}
+                                                        className="w-full h-auto object-cover transform transition-transform duration-700 hover:scale-105"
+                                                        style={{ maxHeight: '400px' }}
+                                                    />
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -499,14 +523,15 @@ export default function RoseGold({ data }) {
                             </h2>
 
                             <div
-                                style={{
-                                    columns: content.images.length === 1 ? 1 : content.images.length === 2 ? 2 : 3,
-                                    columnGap: '2rem',
-                                    gap: '2rem',
-                                }}
+                                className="flex flex-wrap justify-center gap-6"
                             >
                                 {content.images.map((image, index) => (
-                                    <GalleryItem key={image.key} image={image} index={index} />
+                                    <div 
+                                        key={image.key} 
+                                        className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.33%-1.5rem)] max-w-md"
+                                    >
+                                        <GalleryItem image={image} index={index} />
+                                    </div>
                                 ))}
                             </div>
                         </section>
@@ -515,8 +540,8 @@ export default function RoseGold({ data }) {
                     {/* ════════════════════════════════════════
                         FINAL MESSAGE
                     ════════════════════════════════════════ */}
-                    <section className="text-center" style={{ maxWidth: '42rem', margin: '7.5rem auto 0', padding: '0 2.5rem' }}>
-                        <div className="rg-glass rounded-xl" style={{ padding: '40px' }}>
+                    <section className="text-center" style={{ maxWidth: '42rem', margin: '7.5rem auto 0', padding: '0 1.5rem' }}>
+                        <div className="rg-glass rounded-[1.5rem]" style={{ padding: '40px' }}>
                             <span
                                 className="material-symbols-outlined block mb-4"
                                 style={{
@@ -563,47 +588,32 @@ export default function RoseGold({ data }) {
                     className="w-full"
                     style={{
                         borderTop: '1px solid rgba(212,163,115,0.20)',
-                        padding: '3rem 2rem',
+                        padding: '3rem 1.5rem',
                     }}
                 >
                     <div
-                        className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center px-8"
-                        style={{ gap: '1rem' }}
+                        className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center"
+                        style={{ gap: '1.5rem' }}
                     >
                         <div
                             style={{
                                 fontFamily: 'Epilogue, serif',
-                                fontSize: '0.875rem',
+                                fontSize: '0.8125rem',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.15em',
                                 fontWeight: '500',
                                 color: '#a8a29e',
+                                textAlign: 'center',
                             }}
                         >
                             © {new Date().getFullYear()} Yaad Link. A Story Told with Care.
                         </div>
-                        <div style={{ display: 'flex', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', gap: '2rem' }}>
                             <a
                                 href="#"
                                 style={{
                                     fontFamily: 'Epilogue, serif',
-                                    fontSize: '0.875rem',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.15em',
-                                    color: '#a8a29e',
-                                    textDecoration: 'none',
-                                    transition: 'color 0.2s',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.color = '#d4a373'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.color = '#a8a29e'; }}
-                            >
-                                Privacy
-                            </a>
-                            <a
-                                href="#"
-                                style={{
-                                    fontFamily: 'Epilogue, serif',
-                                    fontSize: '0.875rem',
+                                    fontSize: '0.8125rem',
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.15em',
                                     color: '#a8a29e',

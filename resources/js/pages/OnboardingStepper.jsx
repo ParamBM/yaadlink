@@ -7,6 +7,7 @@ import { fetchPublicThemes } from '../store/slices/themesSlice';
 import { createStory, enhanceStory } from '../store/slices/storiesSlice';
 import { fetchUser } from '../store/slices/authSlice';
 import ImageUploader from '../components/ImageUploader';
+import CompactImageUploader from '../components/CompactImageUploader';
 
 export default function OnboardingStepper() {
     const dispatch = useDispatch();
@@ -14,7 +15,7 @@ export default function OnboardingStepper() {
     const location = useLocation();
 
     const { publicItems: occasionTypes } = useSelector((state) => state.occasionTypes);
-    const { publicItems: themes, publicLoading: themesLoading } = useSelector((state) => state.themes);
+    const { publicItems: themes, publicLoading: themesLoading, publicError: themesError } = useSelector((state) => state.themes);
     const { token: authToken, user: authUser } = useSelector((state) => state.auth);
 
     const [step, setStep] = useState(1);
@@ -23,7 +24,7 @@ export default function OnboardingStepper() {
     const autoPublishAttemptedRef = useRef(false);
     const publishInFlightRef = useRef(false);
 
-    const initialOccasionId = location.state?.occasion_type_id || '';
+    const initialOccasionId = new URLSearchParams(location.search).get('occasion') || location.state?.occasion_type_id || '';
 
     const [form, setForm] = useState({
         occasion_type_id: initialOccasionId,
@@ -53,11 +54,17 @@ export default function OnboardingStepper() {
         if (savedDraft) {
             try {
                 const parsedDraft = JSON.parse(savedDraft);
-                setForm((current) => ({
-                    ...current,
-                    ...parsedDraft,
-                    occasion_type_id: parsedDraft.occasion_type_id || current.occasion_type_id,
-                }));
+                setForm((current) => {
+                    const occasionToUse = current.occasion_type_id || parsedDraft.occasion_type_id;
+                    const occasionChanged = occasionToUse && parsedDraft.occasion_type_id && occasionToUse !== parsedDraft.occasion_type_id;
+
+                    return {
+                        ...current,
+                        ...parsedDraft,
+                        occasion_type_id: occasionToUse,
+                        theme_id: occasionChanged ? current.theme_id : (parsedDraft.theme_id || current.theme_id),
+                    };
+                });
             } catch (error) {
                 console.error('Failed to restore onboarding draft:', error);
             }
@@ -114,6 +121,18 @@ export default function OnboardingStepper() {
     }, [themes, resolvedOccasionTypeId]);
 
     const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+    useEffect(() => {
+        if (!form.theme_id) {
+            return;
+        }
+
+        const themeStillAvailable = filteredThemes.some((theme) => String(theme?.id) === String(form.theme_id));
+
+        if (!themeStillAvailable) {
+            set('theme_id', '');
+        }
+    }, [filteredThemes, form.theme_id]);
 
     const handleNext = () => {
         setLocalError('');
@@ -468,6 +487,10 @@ export default function OnboardingStepper() {
                                         <div className="p-8 text-center text-on-surface-variant flex items-center justify-center gap-2">
                                             <span className="material-symbols-outlined animate-spin">sync</span> Loading themes...
                                         </div>
+                                    ) : themesError ? (
+                                        <div className="p-8 text-center border border-error/20 bg-error-container/20 rounded-2xl text-error">
+                                            {themesError}
+                                        </div>
                                     ) : filteredThemes.length === 0 ? (
                                         <div className="p-8 text-center border-2 border-dashed border-outline-variant/30 rounded-2xl text-on-surface-variant">
                                             No themes found for this occasion.
@@ -676,13 +699,12 @@ export default function OnboardingStepper() {
                                                     />
                                                 </div>
                                                 <div className="flex flex-col gap-1.5 md:col-span-2">
-                                                    <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Milestone Image Link</label>
-                                                    <input
-                                                        type="url"
-                                                        className="w-full bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-3 text-sm focus:ring-1 focus:ring-primary outline-none"
-                                                        placeholder="https://example.com/milestone-image.jpg"
+                                                    <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">Milestone Image</label>
+                                                    <CompactImageUploader
                                                         value={milestone.image_url}
-                                                        onChange={(e) => updateMilestone(index, 'image_url', e.target.value)}
+                                                        onUploadSuccess={(url) => updateMilestone(index, 'image_url', url)}
+                                                        onRemove={() => updateMilestone(index, 'image_url', '')}
+                                                        placeholder="Upload milestone image..."
                                                     />
                                                 </div>
                                             </div>
@@ -732,12 +754,11 @@ export default function OnboardingStepper() {
                                                         <span className="material-symbols-outlined text-[14px]">close</span>
                                                     </button>
                                                     <div className="mb-2">
-                                                        <input
-                                                            type="url"
-                                                            className="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary outline-none"
-                                                            placeholder="https://example.com/gallery-image.jpg"
+                                                        <CompactImageUploader
                                                             value={image.url}
-                                                            onChange={(e) => updateImage(index, 'url', e.target.value)}
+                                                            onUploadSuccess={(url) => updateImage(index, 'url', url)}
+                                                            onRemove={() => updateImage(index, 'url', '')}
+                                                            placeholder="Upload gallery image..."
                                                         />
                                                     </div>
                                                     <input

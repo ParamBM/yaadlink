@@ -162,7 +162,7 @@ class UserActivityLogsController extends Controller
             'l.log_note',
             'l.created_at',
             
-            DB::raw("u.name as performed_by_name"),
+            DB::raw("COALESCE(u.name, CASE WHEN l.performed_by = 0 THEN 'Guest' ELSE NULL END) as performed_by_name"),
             DB::raw("u.email as performed_by_email"),
         ];
 
@@ -248,6 +248,14 @@ class UserActivityLogsController extends Controller
                 $w->where(function($sub) use ($themeId) {
                     $sub->where('l.table_name', 'themes')->where('l.record_id', $themeId);
                 })->orWhereRaw("($metaThemeIdExpr) = ?", [$themeId]);
+            });
+        }
+
+        if ($occasionTypeId > 0) {
+            $q->where(function($w) use ($occasionTypeId, $metaOccasionIdExpr) {
+                $w->where(function($sub) use ($occasionTypeId) {
+                    $sub->where('l.table_name', 'occasion_types')->where('l.record_id', $occasionTypeId);
+                })->orWhereRaw("($metaOccasionIdExpr) = ?", [$occasionTypeId]);
             });
         }
 

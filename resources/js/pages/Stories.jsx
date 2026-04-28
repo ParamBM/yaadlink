@@ -14,6 +14,7 @@ import {
 import { fetchThemes } from '../store/slices/themesSlice';
 import { fetchOccasionTypes } from '../store/slices/occasionTypesSlice';
 import ImageUploader from '../components/ImageUploader';
+import CompactImageUploader from '../components/CompactImageUploader';
 import { isPrivilegedRole } from '@/lib/auth';
 
 function slugify(value) {
@@ -984,14 +985,13 @@ function StoryModal({
 
                                             <div className="flex flex-col gap-1.5 mt-2 sm:col-span-2">
                                                 <label className="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                                                    Milestone Image URL
+                                                    Milestone Image
                                                 </label>
-                                                <input
-                                                    type="url"
+                                                <CompactImageUploader
                                                     value={milestone.image_url}
-                                                    onChange={(event) => updateMilestone(index, 'image_url', event.target.value)}
-                                                    placeholder="https://example.com/milestone-image.jpg"
-                                                    className="w-full rounded-2xl border border-outline-variant/30 bg-surface px-4 py-2.5 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary/50 dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-red-400/50"
+                                                    onUploadSuccess={(url) => updateMilestone(index, 'image_url', url)}
+                                                    onRemove={() => updateMilestone(index, 'image_url', '')}
+                                                    placeholder="Upload milestone image..."
                                                 />
                                             </div>
 
@@ -1061,14 +1061,13 @@ function StoryModal({
                                         <div className="grid gap-3 sm:grid-cols-2">
                                             <div className="flex flex-col gap-1.5 sm:col-span-2">
                                                 <label className="font-label text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                                                    Image URL *
+                                                    Image
                                                 </label>
-                                                <input
-                                                    type="url"
+                                                <CompactImageUploader
                                                     value={image.url}
-                                                    onChange={(event) => updateImage(index, 'url', event.target.value)}
-                                                    placeholder="https://example.com/story-image.jpg"
-                                                    className="w-full rounded-2xl border border-outline-variant/30 bg-surface px-4 py-2.5 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary/50 dark:border-stone-700 dark:bg-stone-900 dark:text-white dark:focus:border-red-400/50"
+                                                    onUploadSuccess={(url) => updateImage(index, 'url', url)}
+                                                    onRemove={() => updateImage(index, 'url', '')}
+                                                    placeholder="Upload gallery image..."
                                                 />
                                             </div>
 

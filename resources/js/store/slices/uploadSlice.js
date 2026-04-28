@@ -1,6 +1,44 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+// Async thunk for uploading an image to Cloudinary
+export const uploadToCloudinary = createAsyncThunk(
+    'upload/uploadToCloudinary',
+    async ({ file }, { rejectWithValue }) => {
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const token = sessionStorage.getItem('token');
+            const headers = {
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json',
+            };
+
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            const response = await axios.post('/api/upload/cloudinary', formData, {
+                headers
+            });
+
+            if (response.data.success) {
+                const fileSignature = `${file.name}-${file.size}-${file.lastModified}`;
+                return { signature: fileSignature, url: response.data.url };
+            } else {
+                return rejectWithValue(response.data.error || 'Cloudinary upload failed.');
+            }
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || 
+                error.response?.data?.error || 
+                'Failed to upload image to Cloudinary.'
+            );
+        }
+    }
+);
+
 // Async thunk for uploading an image
 export const uploadImage = createAsyncThunk(
     'upload/uploadImage',
@@ -68,6 +106,19 @@ const uploadSlice = createSlice({
                 state.cachedUploads[action.payload.signature] = action.payload.url;
             })
             .addCase(uploadImage.rejected, (state, action) => {
+                state.isUploading = false;
+                state.error = action.payload;
+            })
+            .addCase(uploadToCloudinary.pending, (state) => {
+                state.isUploading = true;
+                state.error = null;
+            })
+            .addCase(uploadToCloudinary.fulfilled, (state, action) => {
+                state.isUploading = false;
+                state.error = null;
+                state.cachedUploads[action.payload.signature] = action.payload.url;
+            })
+            .addCase(uploadToCloudinary.rejected, (state, action) => {
                 state.isUploading = false;
                 state.error = action.payload;
             });
