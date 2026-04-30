@@ -25,6 +25,27 @@ export default function Register() {
         setIsVisible(true);
     }, []);
 
+    const getPostRegisterRedirect = (user) => {
+        const redirectTo = sessionStorage.getItem('oauth_redirect_to');
+        if (redirectTo) {
+            sessionStorage.removeItem('oauth_redirect_to');
+            return redirectTo;
+        }
+
+        if (
+            sessionStorage.getItem('auth_flow_context') === 'story_publish'
+            && sessionStorage.getItem('onboarding_publish_after_login') === '1'
+        ) {
+            return '/onboarding/story';
+        }
+
+        if (user?.role === 'admin') {
+            return '/dashboard';
+        }
+
+        return '/dashboard';
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.id]: e.target.value });
     };
@@ -47,11 +68,7 @@ export default function Register() {
             setIsRedirecting(true);
 
             setTimeout(() => {
-                if (user?.role === 'admin') {
-                    navigate('/dashboard');
-                } else {
-                    navigate('/');
-                }
+                navigate(getPostRegisterRedirect(user));
             }, 900);
         } catch (err) {
             setIsRedirecting(false);
@@ -111,7 +128,15 @@ export default function Register() {
 
                         {/* Social Auth */}
                         <div className="space-y-3">
-                            <a href="/auth/google/redirect" className="w-full bg-transparent border border-outline-variant/30 text-on-surface font-body font-medium py-2.5 px-6 rounded-full hover:bg-surface-container-low transition-colors flex justify-center items-center gap-3">
+                            <a
+                                href="/auth/google/redirect"
+                                className="w-full bg-transparent border border-outline-variant/30 text-on-surface font-body font-medium py-2.5 px-6 rounded-full hover:bg-surface-container-low transition-colors flex justify-center items-center gap-3"
+                                onClick={() => {
+                                    if (sessionStorage.getItem('auth_flow_context') === 'story_publish') {
+                                        sessionStorage.setItem('oauth_redirect_to', '/onboarding/story');
+                                    }
+                                }}
+                            >
                                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                                 Continue with Google
                             </a>

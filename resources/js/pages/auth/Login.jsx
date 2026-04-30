@@ -16,12 +16,29 @@ export default function Login() {
         setIsVisible(true);
     }, []);
 
+    const getPostLoginRedirect = () => {
+        const redirectTo = sessionStorage.getItem('oauth_redirect_to');
+        if (redirectTo) {
+            sessionStorage.removeItem('oauth_redirect_to');
+            return redirectTo;
+        }
+
+        if (
+            sessionStorage.getItem('auth_flow_context') === 'story_publish'
+            && sessionStorage.getItem('onboarding_publish_after_login') === '1'
+        ) {
+            return '/onboarding/story';
+        }
+
+        return '/dashboard';
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         const result = await dispatch(loginUser({ email, password }));
         if (loginUser.fulfilled.match(result)) {
-            navigate('/dashboard');
+            navigate(getPostLoginRedirect());
         }
     };
 

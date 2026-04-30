@@ -1,9 +1,11 @@
 import MidnightBlue from './MidnightBlue';
 import RoseGold from './RoseGold';
+import SacredWedding from './SacredWedding';
 
 export const THEMES = {
     'rose-gold': RoseGold,
     'midnight-blue': MidnightBlue,
+    'sacred-wedding': SacredWedding,
 };
 
 export const DEFAULT_THEME_SLUG = 'rose-gold';

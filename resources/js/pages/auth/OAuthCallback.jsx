@@ -34,10 +34,22 @@ export default function OAuthCallback() {
                         const user = response.data.user;
                         dispatch(loginSuccess({ user, token }));
 
+                        // Check for explicit redirect target first
                         const redirectTo = sessionStorage.getItem('oauth_redirect_to');
                         if (redirectTo) {
                             sessionStorage.removeItem('oauth_redirect_to');
                             navigate(redirectTo);
+                            return;
+                        }
+
+                        // Check if user came from story creation flow
+                        const hasPublishPending =
+                            localStorage.getItem('onboarding_publish_after_login') === '1' ||
+                            sessionStorage.getItem('onboarding_publish_after_login') === '1' ||
+                            sessionStorage.getItem('auth_flow_context') === 'story_publish';
+
+                        if (hasPublishPending) {
+                            navigate('/onboarding/story');
                             return;
                         }
 

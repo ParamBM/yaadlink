@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import LoginPublishModal from '../components/LoginPublishModal';
+import PublishingLoader from '../components/PublishingLoader';
 import { fetchPublicOccasionTypes } from '../store/slices/occasionTypesSlice';
 import { fetchPublicThemes } from '../store/slices/themesSlice';
 import { createStory, enhanceStory } from '../store/slices/storiesSlice';
@@ -21,10 +22,15 @@ export default function OnboardingStepper() {
     const [step, setStep] = useState(1);
     const [isVisible, setIsVisible] = useState(false);
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    // Loader state: show a beautiful fullscreen animation during login + publishing
+    const [loaderVisible, setLoaderVisible] = useState(false);
+    const [loaderPhase, setLoaderPhase] = useState('publishing'); // 'login' | 'publishing'
     const autoPublishAttemptedRef = useRef(false);
     const publishInFlightRef = useRef(false);
+    // State (not ref) so the autoPublish effect re-runs AFTER the form is restored from localStorage
+    const [draftHydrated, setDraftHydrated] = useState(false);
 
-    const initialOccasionId = new URLSearchParams(location.search).get('occasion') || location.state?.occasion_type_id || '';
+    const initialOccasionId = location.state?.occasion_type_id || '';
 
     const [form, setForm] = useState({
         occasion_type_id: initialOccasionId,
@@ -50,7 +56,8 @@ export default function OnboardingStepper() {
     const [aiSuggestion, setAiSuggestion] = useState(null);
 
     useEffect(() => {
-        const savedDraft = sessionStorage.getItem('onboarding_story_draft');
+        // Restore draft from localStorage (persists across sessions/tabs)
+        const savedDraft = localStorage.getItem('onboarding_story_draft');
         if (savedDraft) {
             try {
                 const parsedDraft = JSON.parse(savedDraft);
@@ -70,14 +77,23 @@ export default function OnboardingStepper() {
             }
         }
 
+        // React batches setForm + setDraftHydrated into one render, so the autoPublish
+        // effect always sees the fully-restored form before attempting to publish.
+        setDraftHydrated(true);
+
         setIsVisible(true);
         dispatch(fetchPublicOccasionTypes());
         dispatch(fetchPublicThemes());
     }, [dispatch]);
 
     useEffect(() => {
-        sessionStorage.setItem('onboarding_story_draft', JSON.stringify(form));
-    }, [form]);
+        if (!draftHydrated) {
+            return;
+        }
+
+        // Persist every form change to localStorage so data survives page reloads
+        localStorage.setItem('onboarding_story_draft', JSON.stringify(form));
+    }, [form, draftHydrated]);
 
     const resolvedOccasionTypeId = useMemo(() => {
         if (!form.occasion_type_id) {
@@ -119,6 +135,50 @@ export default function OnboardingStepper() {
             (theme) => !theme.occasion_type_id || String(theme.occasion_type_id) === resolvedOccasionTypeId
         );
     }, [themes, resolvedOccasionTypeId]);
+
+    const selectedTheme = useMemo(() => (
+        themes.find((theme) => String(theme?.id) === String(form.theme_id)) || null
+    ), [themes, form.theme_id]);
+
+    const effectiveOccasionTypeId = useMemo(() => {
+        const resolveOccasionId = (value) => {
+            const rawValue = String(value || '').trim();
+            if (!rawValue) {
+                return '';
+            }
+
+            const byId = occasionTypes.find((occasionType) => String(occasionType?.id) === rawValue);
+            if (byId) {
+                return String(byId.id);
+            }
+
+            const byLegacyKey = occasionTypes.find((occasionType) =>
+                String(occasionType?.slug || '') === rawValue
+                || String(occasionType?.uuid || '') === rawValue
+            );
+            if (byLegacyKey) {
+                return String(byLegacyKey.id);
+            }
+
+            return /^\d+$/.test(rawValue) ? rawValue : '';
+        };
+
+        const candidates = [
+            resolvedOccasionTypeId,
+            form.occasion_type_id,
+            selectedTheme?.occasion_type_id,
+            initialOccasionId,
+        ];
+
+        for (const candidate of candidates) {
+            const resolvedId = resolveOccasionId(candidate);
+            if (resolvedId) {
+                return resolvedId;
+            }
+        }
+
+        return '';
+    }, [resolvedOccasionTypeId, form.occasion_type_id, selectedTheme, initialOccasionId, occasionTypes]);
 
     const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -233,9 +293,12 @@ export default function OnboardingStepper() {
             caption: img.caption || null,
         }));
 
+        const normalizedOccasionTypeId = Number(effectiveOccasionTypeId);
+        const normalizedThemeId = Number(form.theme_id);
+
         return {
-            occasion_type_id: resolvedOccasionTypeId ? Number(resolvedOccasionTypeId) : null,
-            theme_id: form.theme_id ? Number(form.theme_id) : null,
+            occasion_type_id: Number.isFinite(normalizedOccasionTypeId) ? normalizedOccasionTypeId : null,
+            theme_id: Number.isFinite(normalizedThemeId) ? normalizedThemeId : null,
             person_one_name: form.person_one_name.trim(),
             person_two_name: form.person_two_name.trim(),
             start_date: form.start_date.trim(),
@@ -251,7 +314,13 @@ export default function OnboardingStepper() {
         };
     };
 
-    const publishStory = async () => {
+    const getPendingDraftState = () => ({
+        ...form,
+        occasion_type_id: effectiveOccasionTypeId || form.occasion_type_id || '',
+        theme_id: String(form.theme_id || '').trim(),
+    });
+
+    const publishStory = async (authTokenOverride = null) => {
         if (publishInFlightRef.current) {
             return false;
         }
@@ -259,27 +328,42 @@ export default function OnboardingStepper() {
         publishInFlightRef.current = true;
         setIsSubmitting(true);
         setLocalError('');
+        // Show the beautiful publishing loader
+        setLoaderPhase('publishing');
+        setLoaderVisible(true);
 
-        const result = await dispatch(createStory(buildPayload()));
+        // Determine the token to use: override (from modal login result) > Redux state > sessionStorage
+        const tokenToUse = authTokenOverride || authToken || sessionStorage.getItem('token');
+
+        const result = await dispatch(createStory({
+            payload: buildPayload(),
+            authToken: tokenToUse || undefined,
+        }));
         publishInFlightRef.current = false;
         setIsSubmitting(false);
 
         if (createStory.fulfilled.match(result)) {
-            sessionStorage.removeItem('onboarding_story_draft');
+            // Clean up all draft/publish flags
+            localStorage.removeItem('onboarding_story_draft');
+            localStorage.removeItem('onboarding_publish_after_login');
+            sessionStorage.removeItem('auth_flow_context');
             sessionStorage.removeItem('onboarding_publish_after_login');
             sessionStorage.removeItem('oauth_redirect_to');
+            // Keep loader visible during navigation to publish page
             navigate(`/story/published/${result.payload.slug}`, {
                 state: { story: result.payload },
             });
-            return;
+            return true;
         }
 
+        // Hide loader on error so user can retry
+        setLoaderVisible(false);
         setLocalError(typeof result.payload === 'string' ? result.payload : 'Failed to save story. Please try again.');
         return false;
     };
 
     const validateReadyToPublish = () => {
-        if (!resolvedOccasionTypeId) {
+        if (!effectiveOccasionTypeId) {
             setLocalError('Please choose an occasion first.');
             return false;
         }
@@ -326,11 +410,16 @@ export default function OnboardingStepper() {
     };
 
     const markPublishPending = () => {
+        // Store publish intent in localStorage (survives OAuth redirects)
+        localStorage.setItem('onboarding_publish_after_login', '1');
+        localStorage.setItem('onboarding_story_draft', JSON.stringify(getPendingDraftState()));
+        // Also keep in sessionStorage for same-session OAuth flows
+        sessionStorage.setItem('auth_flow_context', 'story_publish');
         sessionStorage.setItem('onboarding_publish_after_login', '1');
-        sessionStorage.setItem('onboarding_story_draft', JSON.stringify(form));
     };
 
-    const continuePublishAfterAuth = async (resolvedUser = null) => {
+    const continuePublishAfterAuth = async (authSession = null) => {
+        const resolvedUser = authSession?.user ?? authSession ?? null;
         const authenticatedUser = await ensureAuthenticatedUser(resolvedUser);
 
         if (!authenticatedUser) {
@@ -340,7 +429,7 @@ export default function OnboardingStepper() {
             return false;
         }
 
-        return publishStory();
+        return publishStory(authSession?.token || null);
     };
 
     const handleSubmit = async () => {
@@ -348,32 +437,43 @@ export default function OnboardingStepper() {
             return;
         }
 
-        markPublishPending();
-
+        // Check auth: token in Redux or sessionStorage
         const sessionToken = sessionStorage.getItem('token');
         if (!sessionToken && !authToken) {
+            // Not logged in — save draft and show login modal
+            markPublishPending();
             setIsLoginModalOpen(true);
             return;
         }
 
+        // Already logged in — publish immediately
         await continuePublishAfterAuth();
     };
 
     useEffect(() => {
-        const shouldAutoPublish = sessionStorage.getItem('onboarding_publish_after_login') === '1';
+        // After login (modal or OAuth redirect), auto-publish if flag is set.
+        // draftHydrated is STATE (not a ref), so this effect only runs after React
+        // has committed the localStorage-restored form — no more empty occasion_type_id.
+        const shouldAutoPublish =
+            localStorage.getItem('onboarding_publish_after_login') === '1' ||
+            sessionStorage.getItem('onboarding_publish_after_login') === '1';
 
-        if (!shouldAutoPublish || autoPublishAttemptedRef.current || !authToken) {
+        if (!draftHydrated || !shouldAutoPublish || autoPublishAttemptedRef.current || !authToken) {
             return;
         }
 
         autoPublishAttemptedRef.current = true;
 
-        const continuePublish = async () => {
-            await continuePublishAfterAuth();
-        };
+        // Show loader immediately so user isn't staring at a frozen stepper
+        setLoaderPhase('publishing');
+        setLoaderVisible(true);
 
-        continuePublish();
-    }, [authToken, authUser]);
+        // Clear flags before publishing to prevent duplicate attempts
+        localStorage.removeItem('onboarding_publish_after_login');
+        sessionStorage.removeItem('onboarding_publish_after_login');
+
+        continuePublishAfterAuth();
+    }, [authToken, authUser, draftHydrated, form]);
 
     const MAX_STORY_MILESTONES = 4;
     const addMilestone = () => {
@@ -426,18 +526,26 @@ export default function OnboardingStepper() {
                 }
             `}} />
 
+            <PublishingLoader isVisible={loaderVisible} phase={loaderPhase} />
+
             <LoginPublishModal
                 isOpen={isLoginModalOpen}
                 onClose={() => {
                     setIsLoginModalOpen(false);
+                    setLoaderVisible(false);
+                    sessionStorage.removeItem('auth_flow_context');
                     sessionStorage.removeItem('onboarding_publish_after_login');
                     sessionStorage.removeItem('oauth_redirect_to');
                 }}
-                onSuccess={async (user) => {
+                onSuccess={async (authSession) => {
                     setIsLoginModalOpen(false);
-                    await continuePublishAfterAuth(user);
+                    // Show login phase loader while we verify + publish
+                    setLoaderPhase('login');
+                    setLoaderVisible(true);
+                    await continuePublishAfterAuth(authSession);
                 }}
-                draftState={form}
+                onBeforeAuthRedirect={markPublishPending}
+                draftState={getPendingDraftState()}
             />
 
             <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-surface antialiased">

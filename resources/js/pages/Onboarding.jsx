@@ -33,9 +33,15 @@ export default function Onboarding() {
 
     const handleContinue = () => {
         if (selectedCelebrating) {
-            navigate(`/onboarding/story?occasion=${encodeURIComponent(selectedCelebrating)}`, {
-                state: { occasion_type_id: selectedCelebrating },
-            });
+            // Persist occasion selection to localStorage so no ID leaks into the URL
+            const existing = (() => {
+                try { return JSON.parse(localStorage.getItem('onboarding_story_draft') || '{}'); } catch { return {}; }
+            })();
+            localStorage.setItem('onboarding_story_draft', JSON.stringify({
+                ...existing,
+                occasion_type_id: selectedCelebrating,
+            }));
+            navigate('/onboarding/story');
         }
     };
 

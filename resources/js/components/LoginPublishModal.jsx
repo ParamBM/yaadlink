@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../store/slices/authSlice';
 
-export default function LoginPublishModal({ isOpen, onClose, onSuccess, draftState }) {
+export default function LoginPublishModal({ isOpen, onClose, onSuccess, draftState, onBeforeAuthRedirect }) {
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state) => state.auth);
 
@@ -32,16 +32,20 @@ export default function LoginPublishModal({ isOpen, onClose, onSuccess, draftSta
         const result = await dispatch(loginUser({ email, password }));
         if (loginUser.fulfilled.match(result)) {
             setPassword('');
-            await onSuccess?.(result.payload.user);
+            await onSuccess?.(result.payload);
         }
     };
 
     const handleGoogleContinue = () => {
+        onBeforeAuthRedirect?.();
+        // Redirect back to the stepper after Google auth — the autoPublish effect will fire
         sessionStorage.setItem('oauth_redirect_to', '/onboarding/story');
+        sessionStorage.setItem('auth_flow_context', 'story_publish');
         sessionStorage.setItem('onboarding_publish_after_login', '1');
+        localStorage.setItem('onboarding_publish_after_login', '1');
 
         if (draftState) {
-            sessionStorage.setItem('onboarding_story_draft', JSON.stringify(draftState));
+            localStorage.setItem('onboarding_story_draft', JSON.stringify(draftState));
         }
 
         window.location.href = '/auth/google/redirect';
@@ -127,7 +131,11 @@ export default function LoginPublishModal({ isOpen, onClose, onSuccess, draftSta
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between ml-1">
                                 <label className="block text-sm font-medium text-on-surface" htmlFor="publish-login-password">Password</label>
-                                <Link className="text-xs text-primary hover:text-secondary transition-colors font-medium" to="/login">
+                                <Link
+                                    className="text-xs text-primary hover:text-secondary transition-colors font-medium"
+                                    to="/login"
+                                    onClick={() => onBeforeAuthRedirect?.()}
+                                >
                                     Forgot?
                                 </Link>
                             </div>
@@ -190,7 +198,11 @@ export default function LoginPublishModal({ isOpen, onClose, onSuccess, draftSta
                     <div className="mt-8 text-center">
                         <p className="text-xs text-on-surface-variant">
                             Don't have an account?
-                            <Link className="text-primary font-semibold hover:text-secondary transition-colors underline-offset-2 hover:underline ml-1" to="/register">
+                            <Link
+                                className="text-primary font-semibold hover:text-secondary transition-colors underline-offset-2 hover:underline ml-1"
+                                to="/register"
+                                onClick={() => onBeforeAuthRedirect?.()}
+                            >
                                 Sign up now
                             </Link>
                         </p>

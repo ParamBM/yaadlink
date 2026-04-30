@@ -170,16 +170,18 @@ export const fetchPublicStoryBySlug = createAsyncThunk(
 
 export const createStory = createAsyncThunk(
     'stories/create',
-    async (payload, { getState, rejectWithValue }) => {
+    async (input, { getState, rejectWithValue }) => {
         const { auth } = getState();
+        const payload = input?.payload ?? input;
+        const token = input?.authToken || auth.token || sessionStorage.getItem('token');
 
-        if (!auth.token) {
+        if (!token) {
             return rejectWithValue('Please log in to publish your story');
         }
 
         try {
             const res = await axios.post('/api/stories/', payload, {
-                headers: { Authorization: `Bearer ${auth.token}` },
+                headers: { Authorization: `Bearer ${token}` },
             });
 
             return res.data.data;
