@@ -12,15 +12,25 @@ export default function Footer() {
                 </Link>
 
                 <div className="flex flex-wrap justify-center gap-6 font-body text-sm tracking-wide text-on-surface-variant">
-                    {footerLinks.map((link) => (
-                        <a
-                            key={link.label}
-                            className="transition-colors duration-300 hover:text-primary focus-visible:text-primary"
-                            href={link.href}
-                        >
-                            {link.label}
-                        </a>
-                    ))}
+                    {footerLinks.map((link) =>
+                        link.to ? (
+                            <Link
+                                key={link.label}
+                                to={link.to}
+                                className="transition-colors duration-300 hover:text-primary focus-visible:text-primary"
+                            >
+                                {link.label}
+                            </Link>
+                        ) : (
+                            <a
+                                key={link.label}
+                                href={link.href}
+                                className="transition-colors duration-300 hover:text-primary focus-visible:text-primary"
+                            >
+                                {link.label}
+                            </a>
+                        )
+                    )}
                 </div>
 
                 <p className="font-body text-sm tracking-wide text-secondary">

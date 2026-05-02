@@ -161,17 +161,18 @@ export default function ActivityLogs() {
                     </div>
 
                     {pagination && pagination.last_page > 1 && (
-                        <div className="mt-5 flex items-center justify-between border-t border-outline-variant/15 pt-5 dark:border-stone-700/50">
-                            <span className="text-sm font-body text-on-surface-variant dark:text-stone-400">
+                        <div className="mt-5 flex flex-col gap-3 border-t border-outline-variant/15 pt-5 dark:border-stone-700/50 sm:flex-row sm:items-center sm:justify-between">
+                            <span className="text-center text-sm font-body text-on-surface-variant dark:text-stone-400 sm:text-left">
                                 Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, pagination.total)} of {pagination.total}
                             </span>
-                            <div className="flex gap-2">
+                            <div className="flex w-full items-center justify-center gap-1.5 sm:w-auto sm:gap-2">
                                 <button
                                     disabled={page <= 1}
                                     onClick={() => setPage((current) => current - 1)}
-                                    className="rounded-full px-4 py-2 text-sm font-medium font-label text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white"
+                                    className="rounded-full px-3 py-2 text-sm font-medium font-label text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white sm:px-4"
                                 >
-                                    Previous
+                                    <span className="sm:hidden" aria-hidden="true">‹</span>
+                                    <span className="hidden sm:inline">Previous</span>
                                 </button>
                                 {Array.from({ length: Math.min(5, pagination.last_page) }, (_, index) => {
                                     const currentPage = index + 1;
@@ -180,7 +181,7 @@ export default function ActivityLogs() {
                                         <button
                                             key={currentPage}
                                             onClick={() => setPage(currentPage)}
-                                            className={`rounded-full px-4 py-2 text-sm font-medium font-label transition-colors ${
+                                            className={`rounded-full px-3 py-2 text-sm font-medium font-label transition-colors sm:px-4 ${
                                                 page === currentPage
                                                     ? 'bg-primary-container text-on-primary-container dark:bg-primary dark:text-on-primary'
                                                     : 'text-on-surface-variant hover:bg-surface-variant hover:text-on-surface dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white'
@@ -193,9 +194,10 @@ export default function ActivityLogs() {
                                 <button
                                     disabled={page >= pagination.last_page}
                                     onClick={() => setPage((current) => current + 1)}
-                                    className="rounded-full px-4 py-2 text-sm font-medium font-label text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white"
+                                    className="rounded-full px-3 py-2 text-sm font-medium font-label text-on-surface-variant transition-colors hover:bg-surface-variant hover:text-on-surface disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white sm:px-4"
                                 >
-                                    Next
+                                    <span className="sm:hidden" aria-hidden="true">›</span>
+                                    <span className="hidden sm:inline">Next</span>
                                 </button>
                             </div>
                         </div>

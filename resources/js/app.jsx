@@ -7,7 +7,7 @@ import { Provider } from 'react-redux';
 import store from './store';
 
 import Layout from './components/Layout';
-import Welcome from './pages/welcome';
+import Welcome from './pages/Welcome';
 import Onboarding from './pages/Onboarding';
 import OnboardingStepper from './pages/OnboardingStepper';
 import PublicStoryPage from './pages/PublicStoryPage';
@@ -15,6 +15,7 @@ import PublishSuccess from './pages/PublishSuccess';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import OAuthCallback from './pages/auth/OAuthCallback';
+import Legal from './pages/Legal';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminOnlyRoute from './components/routes/AdminOnlyRoute';
 import DashboardIndexRedirect from './pages/DashboardIndexRedirect';
@@ -47,6 +48,7 @@ function AppContent() {
                 {/* Public routes */}
                 <Route element={<Layout />}>
                     <Route path="/" element={<Welcome />} />
+                    <Route path="/legal" element={<Legal />} />
                 </Route>
 
                 {/* Standalone routes */}
