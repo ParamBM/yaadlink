@@ -1,16 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { formatDisplayDate, formatMilestoneDate, getThemeStoryContent } from '../shared';
 
-const FALLBACK_GALLERY_IMAGES = [
-    '/images/themes/sacred-wedding/img-1.jpg',
-    '/images/themes/sacred-wedding/img-2.jpg',
-    '/images/themes/sacred-wedding/img-3.jpg',
-    '/images/themes/sacred-wedding/img-4.jpg',
-    '/images/themes/sacred-wedding/img-5.jpg',
-    '/images/themes/sacred-wedding/img-6.jpg',
-    '/images/themes/sacred-wedding/img-7.jpg',
-    '/images/themes/sacred-wedding/img-8.jpg',
-];
+
 
 function ShareModal({ onClose, title }) {
     const [copied, setCopied] = useState(false);
@@ -63,21 +54,13 @@ function ShareModal({ onClose, title }) {
 
 function buildGalleryImages(content) {
     const seen = new Set();
-    const merged = [...content.images, ...FALLBACK_GALLERY_IMAGES.map((src, index) => ({
-        src,
-        alt: `Wedding gallery image ${index + 1}`,
-        caption: '',
-        key: `fallback-${index}`,
-    }))];
-
-    return merged
+    return (content.images || [])
         .filter((image) => image?.src)
         .filter((image) => {
             if (seen.has(image.src)) return false;
             seen.add(image.src);
             return true;
-        })
-        .slice(0, 8);
+        });
 }
 
 function buildNavSections(hasStory, hasMilestones, hasGallery) {
@@ -115,8 +98,8 @@ export default function SacredWedding({ data }) {
         .map((paragraph) => paragraph.trim())
         .filter(Boolean);
     const galleryImages = useMemo(() => buildGalleryImages(content), [content]);
-    const storyImage = content.coverImageUrl || galleryImages[0]?.src || FALLBACK_GALLERY_IMAGES[0];
-    const blessingImage = galleryImages[4]?.src || galleryImages[1]?.src || FALLBACK_GALLERY_IMAGES[4];
+    const storyImage = content.coverImageUrl || galleryImages[0]?.src;
+    const blessingImage = galleryImages[4]?.src || galleryImages[1]?.src;
     const initials = content.initials || content.people.map((name) => name.charAt(0).toUpperCase()).join(' & ') || 'A & R';
     const navSections = buildNavSections(storyParagraphs.length > 0, content.milestones.length > 0, galleryImages.length > 0);
 
@@ -195,6 +178,44 @@ export default function SacredWedding({ data }) {
                 .sw-gallery-item:hover .sw-gallery-border {
                     opacity: 1;
                 }
+                .sw-gallery-caption {
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    padding: 28px 14px 14px;
+                    background: linear-gradient(to top, rgba(26,5,5,0.92) 0%, rgba(26,5,5,0.55) 60%, transparent 100%);
+                    transform: translateY(100%);
+                    opacity: 0;
+                    transition: transform 0.45s ease, opacity 0.45s ease;
+                    pointer-events: none;
+                }
+                .sw-gallery-item:hover .sw-gallery-caption {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+                .sw-gallery-caption p {
+                    font-family: 'Playfair Display', serif;
+                    font-size: 13px;
+                    font-style: italic;
+                    color: #f5e6c8;
+                    text-align: center;
+                    line-height: 1.4;
+                    margin: 0;
+                }
+                @media (max-width: 639px) {
+                    .sw-gallery-caption {
+                        position: static;
+                        transform: none;
+                        opacity: 1;
+                        padding: 6px 8px 4px;
+                        background: transparent;
+                    }
+                    .sw-gallery-caption p {
+                        color: #b8966a;
+                        font-size: 11px;
+                    }
+                }
                 .sw-nav-link:hover {
                     color: #c9a227;
                 }
@@ -247,11 +268,7 @@ export default function SacredWedding({ data }) {
                     0%, 100% { transform: translateY(0); opacity: 0.8; }
                     50% { transform: translateY(28px); opacity: 1; }
                 }
-                @media (min-width: 1024px) {
-                    .sw-gallery-grid .sw-gallery-item:nth-child(2) { margin-top: 40px; }
-                    .sw-gallery-grid .sw-gallery-item:nth-child(5) { margin-top: -20px; }
-                    .sw-gallery-grid .sw-gallery-item:nth-child(8) { margin-top: 20px; }
-                }
+
             `}</style>
 
             <div className="sw-root">
@@ -449,13 +466,15 @@ export default function SacredWedding({ data }) {
                                 <div className="h-px flex-1 bg-[#c9a227]/30" />
                                 <span className="text-[8px] text-[#c9a227]">◆</span>
                             </div>
-                            <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-[4px] border border-[#c9a227]/15">
-                                <img
-                                    src={blessingImage}
-                                    alt="Wedding blessing"
-                                    className="h-[280px] w-full object-cover opacity-80"
-                                />
-                            </div>
+                            {blessingImage && (
+                                <div className="mx-auto mt-10 max-w-2xl overflow-hidden rounded-[4px] border border-[#c9a227]/15">
+                                    <img
+                                        src={blessingImage}
+                                        alt="Wedding blessing"
+                                        className="h-[280px] w-full object-cover opacity-80"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -470,16 +489,23 @@ export default function SacredWedding({ data }) {
                                 </h2>
                             </div>
 
-                            <div className="sw-gallery-grid grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 lg:grid-cols-3">
+                            <div className="sw-gallery-grid grid grid-cols-2 gap-3 px-3 lg:grid-cols-2">
                                 {galleryImages.map((image, index) => (
                                     <div key={image.key || image.src || index} className="sw-gallery-item relative overflow-hidden rounded-[2px]">
-                                        <img
-                                            src={image.src}
-                                            alt={image.alt || `Gallery image ${index + 1}`}
-                                            className="block w-full transition duration-700"
-                                        />
+                                        <div className="aspect-[4/5] w-full">
+                                            <img
+                                                src={image.src}
+                                                alt={image.alt || `Gallery image ${index + 1}`}
+                                                className="block h-full w-full object-cover transition duration-700"
+                                            />
+                                        </div>
                                         <div className="sw-gallery-overlay absolute inset-0 bg-[#c9a227]/10 opacity-0 transition duration-700" />
                                         <div className="sw-gallery-border absolute inset-0 rounded-[2px] border border-[#c9a227] opacity-0 transition duration-700" />
+                                        {image.caption && (
+                                            <div className="sw-gallery-caption">
+                                                <p>{image.caption}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
