@@ -7,7 +7,7 @@ import { Provider } from 'react-redux';
 import store from './store';
 
 import Layout from './components/Layout';
-import Welcome from './pages/Welcome';
+import Welcome from './pages/welcome';
 import Onboarding from './pages/Onboarding';
 import OnboardingStepper from './pages/OnboardingStepper';
 import PublicStoryPage from './pages/PublicStoryPage';
