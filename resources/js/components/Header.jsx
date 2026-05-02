@@ -67,7 +67,7 @@ export default function Header() {
                             <button
                                 aria-expanded={drawerOpen}
                                 aria-label="Open navigation drawer"
-                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/20 bg-surface-container-lowest text-on-surface-variant transition-colors hover:border-primary/30 hover:text-primary"
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-outline-variant/20 bg-surface-container-lowest text-on-surface-variant transition-colors hover:border-primary/30 hover:text-primary md:hidden"
                                 onClick={() => setDrawerOpen(true)}
                                 type="button"
                             >
