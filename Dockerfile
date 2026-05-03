@@ -56,6 +56,7 @@ RUN apk add --no-cache \
     libxml2-dev \
     sqlite-dev \
     postgresql-dev \
+    mysql-dev \
     git \
     bash
 
@@ -66,6 +67,8 @@ RUN docker-php-ext-configure gd \
         --with-webp && \
     docker-php-ext-install -j$(nproc) \
         pdo \
+        pdo_mysql \
+        mysqli \
         pdo_sqlite \
         pdo_pgsql \
         pgsql \
