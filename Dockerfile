@@ -9,7 +9,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Install ALL node dependencies (including devDeps needed for Vite build)
-RUN npm ci
+# Use npm install instead of npm ci to handle platform-specific lock file differences
+# (package-lock.json generated on Windows may have mismatched optional native deps for Linux)
+RUN npm install --legacy-peer-deps
 
 # Copy the rest of the source so Vite can find resources/
 COPY . .
