@@ -260,10 +260,18 @@ class UserActivityLogsController extends Controller
         }
 
         if (!empty($from)) {
-            $q->whereDate('l.created_at', '>=', $from);
+            try {
+                $q->where('l.created_at', '>=', Carbon::parse($from)->startOfDay());
+            } catch (\Throwable $e) {
+                $q->whereRaw('1 = 0');
+            }
         }
         if (!empty($to)) {
-            $q->whereDate('l.created_at', '<=', $to);
+            try {
+                $q->where('l.created_at', '<=', Carbon::parse($to)->endOfDay());
+            } catch (\Throwable $e) {
+                $q->whereRaw('1 = 0');
+            }
         }
 
         if ($search !== '') {

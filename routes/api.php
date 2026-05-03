@@ -37,7 +37,7 @@ Route::middleware(CheckRole::class . ':admin')->group(function () {
 
 // ── Occasion Types ────────────────────────────────────────────────────────────
 Route::prefix('occasion-types')->group(function () {
-    Route::get('/public', [OccasionTypeController::class, 'publicIndex']);
+    Route::get('/public', [OccasionTypeController::class, 'publicIndex'])->middleware('public.api.cache:300,1800');
 
     Route::middleware(CheckRole::class . ':admin')->group(function () {
         Route::get('/',       [OccasionTypeController::class, 'index']);
@@ -50,7 +50,7 @@ Route::prefix('occasion-types')->group(function () {
 
 // Themes
 Route::prefix('themes')->group(function () {
-    Route::get('/public', [ThemeController::class, 'publicIndex']);
+    Route::get('/public', [ThemeController::class, 'publicIndex'])->middleware('public.api.cache:300,1800');
 
     Route::middleware(CheckRole::class . ':admin')->group(function () {
         Route::get('/',       [ThemeController::class, 'index']);
@@ -63,7 +63,7 @@ Route::prefix('themes')->group(function () {
 
 // Stories
 Route::prefix('stories')->group(function () {
-    Route::get('/public', [StoryController::class, 'publicIndex']);
+    Route::get('/public', [StoryController::class, 'publicIndex'])->middleware('public.api.cache:60,300');
     Route::get('/public/{slug}', [StoryController::class, 'publicShow']);
 
     // Public AI enhancement — API key is server-side only, no auth needed

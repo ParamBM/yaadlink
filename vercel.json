@@ -1,5 +1,8 @@
 {
     "version": 2,
+    "regions": [
+        "bom1"
+    ],
     "framework": null,
     "builds": [
         {
@@ -33,15 +36,15 @@
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": "false",
         "APP_URL": "https://yaadlink.vercel.app",
         "ASSET_URL": "https://yaadlink.vercel.app",
         "APP_KEY": "base64:1XT00cc24Xg6hHtta7BHhEF1fbcC59AGRFLB6rJWu2k=",
         "LOG_CHANNEL": "stderr",
-        "CACHE_DRIVER": "array",
+        "CACHE_DRIVER": "database",
         "SESSION_DRIVER": "cookie",
         "VIEW_COMPILED_PATH": "/tmp/views",
-        "CACHE_STORE": "array",
+        "CACHE_STORE": "database",
         "VERCEL": "1"
     }
 }

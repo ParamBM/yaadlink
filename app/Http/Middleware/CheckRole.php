@@ -30,22 +30,34 @@ class CheckRole
         }
         $hashed = hash('sha256', $token);
 
-        // 2) Validate token (for Users only)
-        $pat = DB::table('personal_access_tokens')
-            ->where('token', $hashed)
-            ->where('tokenable_type', self::USER_TYPE)
+        // 2) Validate token and fetch the user in one indexed query.
+        $user = DB::table('personal_access_tokens as pat')
+            ->join('users as u', 'u.id', '=', 'pat.tokenable_id')
+            ->where('pat.token', $hashed)
+            ->where('pat.tokenable_type', self::USER_TYPE)
+            ->select([
+                'pat.id as token_id',
+                'pat.abilities as token_abilities',
+                'pat.expires_at as token_expires_at',
+                'u.id',
+                'u.uuid',
+                'u.role',
+                'u.role_short_form',
+                'u.status',
+                'u.deleted_at',
+            ])
             ->first();
 
-        if (!$pat) {
+        if (!$user) {
             return response()->json(['error' => 'Unauthorized Access'], 403);
         }
 
         // Optional expiry guard (tokens may have expires_at)
-        if (isset($pat->expires_at) && $pat->expires_at !== null) {
+        if (isset($user->token_expires_at) && $user->token_expires_at !== null) {
             try {
-                if (now()->greaterThan(\Carbon\Carbon::parse($pat->expires_at))) {
+                if (now()->greaterThan(\Carbon\Carbon::parse($user->token_expires_at))) {
                     // remove expired token for hygiene
-                    DB::table('personal_access_tokens')->where('id', $pat->id)->delete();
+                    DB::table('personal_access_tokens')->where('id', $user->token_id)->delete();
                     return response()->json(['error' => 'Token Expired'], 401);
                 }
             } catch (\Throwable $e) {
@@ -53,14 +65,6 @@ class CheckRole
             }
         }
 
-        // 3) Fetch user
-        $user = DB::table('users')
-            ->where('id', $pat->tokenable_id)
-            ->first();
-
-        if (!$user) {
-            return response()->json(['error' => 'Unauthorized Access'], 403);
-        }
         $isInactive = (isset($user->status) && $this->isInactiveStatus($user->status))
             || (!isset($user->status) && isset($user->deleted_at) && $user->deleted_at !== null);
 
@@ -83,7 +87,7 @@ class CheckRole
         $request->attributes->set('auth_tokenable_id', (int) $user->id);
         $request->attributes->set('auth_user_uuid', (string) ($user->uuid ?? ''));
         $request->attributes->set('auth_role', $this->canonicalRole((string) ($user->role ?? '')));
-        $request->attributes->set('auth_abilities', $this->decodeAbilities($pat->abilities ?? null));
+        $request->attributes->set('auth_abilities', $this->decodeAbilities($user->token_abilities ?? null));
 
         return $next($request);
     }

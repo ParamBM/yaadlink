@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -12,9 +13,39 @@ use Carbon\Carbon;
 
 class OccasionTypeController extends Controller
 {
+    private const PUBLIC_CACHE_VERSION_KEY = 'occasion_types_public_cache_version';
+
+    private ?bool $occasionTypesTableExists = null;
+    private array $occasionTypesColumnExists = [];
+
+    private function publicCacheKey(): string
+    {
+        $version = (int) Cache::get(self::PUBLIC_CACHE_VERSION_KEY, 1);
+
+        return "occasion_types_public_{$version}";
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        $version = (int) Cache::get(self::PUBLIC_CACHE_VERSION_KEY, 1);
+        Cache::forever(self::PUBLIC_CACHE_VERSION_KEY, $version + 1);
+    }
+
     private function hasColumn(string $column): bool
     {
-        return Schema::hasTable('occasion_types') && Schema::hasColumn('occasion_types', $column);
+        if ($this->occasionTypesTableExists === null) {
+            $this->occasionTypesTableExists = Schema::hasTable('occasion_types');
+        }
+
+        if (!$this->occasionTypesTableExists) {
+            return false;
+        }
+
+        if (!array_key_exists($column, $this->occasionTypesColumnExists)) {
+            $this->occasionTypesColumnExists[$column] = Schema::hasColumn('occasion_types', $column);
+        }
+
+        return $this->occasionTypesColumnExists[$column];
     }
 
     private function baseOccasionQuery()
@@ -54,13 +85,15 @@ class OccasionTypeController extends Controller
      */
     public function publicIndex()
     {
-        $query = $this->baseOccasionQuery();
+        $occasions = Cache::remember($this->publicCacheKey(), now()->addMinutes(10), function () {
+            $query = $this->baseOccasionQuery();
 
-        if ($this->hasColumn('is_active')) {
-            $query->where('is_active', true);
-        }
+            if ($this->hasColumn('is_active')) {
+                $query->where('is_active', true);
+            }
 
-        $occasions = $query->get();
+            return $query->get();
+        });
 
         return response()->json([
             'success' => true,
@@ -127,6 +160,7 @@ class OccasionTypeController extends Controller
         $id = DB::table('occasion_types')->insertGetId($insertData);
 
         $occasion = DB::table('occasion_types')->where('id', $id)->first();
+        $this->invalidatePublicCache();
 
         return response()->json([
             'success' => true,
@@ -221,6 +255,7 @@ class OccasionTypeController extends Controller
         DB::table('occasion_types')->where('id', $id)->update($updates);
 
         $updatedOccasion = DB::table('occasion_types')->where('id', $id)->first();
+        $this->invalidatePublicCache();
 
         return response()->json([
             'success' => true,
@@ -254,6 +289,8 @@ class OccasionTypeController extends Controller
         } else {
             DB::table('occasion_types')->where('id', $id)->delete();
         }
+
+        $this->invalidatePublicCache();
 
         return response()->json([
             'success' => true,

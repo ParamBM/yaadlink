@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -13,14 +14,60 @@ use Illuminate\Validation\Rule;
 
 class ThemeController extends Controller
 {
+    private const PUBLIC_CACHE_VERSION_KEY = 'themes_public_cache_version';
+
+    private ?bool $themesTableExists = null;
+    private ?bool $occasionTypesTableExists = null;
+    private array $themesColumnExists = [];
+    private array $occasionTypesColumnExists = [];
+
+    private function publicCacheKey(Request $request): string
+    {
+        $query = $request->query();
+        ksort($query);
+        $version = (int) Cache::get(self::PUBLIC_CACHE_VERSION_KEY, 1);
+
+        return 'themes_public_' . $version . '_' . md5(json_encode($query));
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        $version = (int) Cache::get(self::PUBLIC_CACHE_VERSION_KEY, 1);
+        Cache::forever(self::PUBLIC_CACHE_VERSION_KEY, $version + 1);
+    }
+
     private function hasColumn(string $column): bool
     {
-        return Schema::hasTable('themes') && Schema::hasColumn('themes', $column);
+        if ($this->themesTableExists === null) {
+            $this->themesTableExists = Schema::hasTable('themes');
+        }
+
+        if (!$this->themesTableExists) {
+            return false;
+        }
+
+        if (!array_key_exists($column, $this->themesColumnExists)) {
+            $this->themesColumnExists[$column] = Schema::hasColumn('themes', $column);
+        }
+
+        return $this->themesColumnExists[$column];
     }
 
     private function hasOccasionTypeColumn(string $column): bool
     {
-        return Schema::hasTable('occasion_types') && Schema::hasColumn('occasion_types', $column);
+        if ($this->occasionTypesTableExists === null) {
+            $this->occasionTypesTableExists = Schema::hasTable('occasion_types');
+        }
+
+        if (!$this->occasionTypesTableExists) {
+            return false;
+        }
+
+        if (!array_key_exists($column, $this->occasionTypesColumnExists)) {
+            $this->occasionTypesColumnExists[$column] = Schema::hasColumn('occasion_types', $column);
+        }
+
+        return $this->occasionTypesColumnExists[$column];
     }
 
     private function baseThemeQuery()
@@ -68,7 +115,11 @@ class ThemeController extends Controller
             return $occasionTypeId > 0 ? $occasionTypeId : null;
         }
 
-        if (!Schema::hasTable('occasion_types')) {
+        if ($this->occasionTypesTableExists === null) {
+            $this->occasionTypesTableExists = Schema::hasTable('occasion_types');
+        }
+
+        if (!$this->occasionTypesTableExists) {
             return null;
         }
 
@@ -288,17 +339,23 @@ class ThemeController extends Controller
      */
     public function publicIndex(Request $request)
     {
-        $query = $this->baseThemeQuery();
+        $themes = Cache::remember($this->publicCacheKey($request), now()->addMinutes(10), function () use ($request) {
+            $query = $this->baseThemeQuery();
 
-        if ($this->hasColumn('is_active')) {
-            $query->where('is_active', true);
-        }
+            if ($this->hasColumn('is_active')) {
+                $query->where('is_active', true);
+            }
 
-        $themes = $this->applyThemeFilters($query, $request, true)->get();
+            return $this->applyThemeFilters($query, $request, true)
+                ->get()
+                ->map(fn ($theme) => $this->normalizeTheme($theme))
+                ->values()
+                ->all();
+        });
 
         return response()->json([
             'success' => true,
-            'data' => $themes->map(fn ($theme) => $this->normalizeTheme($theme))->values(),
+            'data' => $themes,
         ]);
     }
 
@@ -405,6 +462,7 @@ class ThemeController extends Controller
 
         $id = DB::table('themes')->insertGetId($insertData);
         $theme = DB::table('themes')->where('id', $id)->first();
+        $this->invalidatePublicCache();
 
         return response()->json([
             'success' => true,
@@ -542,6 +600,7 @@ class ThemeController extends Controller
 
         DB::table('themes')->where('id', $id)->update($updates);
         $updatedTheme = $this->themeByIdQuery($id)->first();
+        $this->invalidatePublicCache();
 
         return response()->json([
             'success' => true,
@@ -571,6 +630,8 @@ class ThemeController extends Controller
         } else {
             DB::table('themes')->where('id', $id)->delete();
         }
+
+        $this->invalidatePublicCache();
 
         return response()->json([
             'success' => true,

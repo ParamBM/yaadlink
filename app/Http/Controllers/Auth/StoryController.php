@@ -16,6 +16,34 @@ use Illuminate\Validation\Rule;
 
 class StoryController extends Controller
 {
+    private const PUBLIC_CACHE_VERSION_KEY = 'stories_public_cache_version';
+
+    private array $tableExists = [];
+    private array $columnExists = [];
+
+    private function publicCacheVersion(): int
+    {
+        return (int) Cache::get(self::PUBLIC_CACHE_VERSION_KEY, 1);
+    }
+
+    private function publicIndexCacheKey(Request $request): string
+    {
+        $query = $request->query();
+        ksort($query);
+
+        return 'stories_public_index_' . $this->publicCacheVersion() . '_' . md5(json_encode($query));
+    }
+
+    private function publicShowCacheKey(string $slug): string
+    {
+        return 'stories_public_show_' . $this->publicCacheVersion() . '_' . md5($slug);
+    }
+
+    private function invalidatePublicCache(): void
+    {
+        Cache::forever(self::PUBLIC_CACHE_VERSION_KEY, $this->publicCacheVersion() + 1);
+    }
+
     private function activityActorOverride(Request $request): ?array
     {
         $userId = $this->currentUserId($request);
@@ -58,7 +86,31 @@ class StoryController extends Controller
 
     private function hasStoryColumn(string $column): bool
     {
-        return Schema::hasTable('stories') && Schema::hasColumn('stories', $column);
+        return $this->hasColumn('stories', $column);
+    }
+
+    private function hasTable(string $table): bool
+    {
+        if (!array_key_exists($table, $this->tableExists)) {
+            $this->tableExists[$table] = Schema::hasTable($table);
+        }
+
+        return $this->tableExists[$table];
+    }
+
+    private function hasColumn(string $table, string $column): bool
+    {
+        if (!$this->hasTable($table)) {
+            return false;
+        }
+
+        $cacheKey = "{$table}.{$column}";
+
+        if (!array_key_exists($cacheKey, $this->columnExists)) {
+            $this->columnExists[$cacheKey] = Schema::hasColumn($table, $column);
+        }
+
+        return $this->columnExists[$cacheKey];
     }
 
     private function isAdmin(Request $request): bool
@@ -189,7 +241,7 @@ class StoryController extends Controller
 
     private function fetchThemesByIds(array $ids)
     {
-        if (empty($ids) || !Schema::hasTable('themes')) {
+        if (empty($ids) || !$this->hasTable('themes')) {
             return collect();
         }
 
@@ -201,7 +253,7 @@ class StoryController extends Controller
 
     private function fetchOccasionTypesByIds(array $ids)
     {
-        if (empty($ids) || !Schema::hasTable('occasion_types')) {
+        if (empty($ids) || !$this->hasTable('occasion_types')) {
             return collect();
         }
 
@@ -213,14 +265,14 @@ class StoryController extends Controller
 
     private function fetchUsersByIds(array $ids)
     {
-        if (empty($ids) || !Schema::hasTable('users')) {
+        if (empty($ids) || !$this->hasTable('users')) {
             return collect();
         }
 
         $query = DB::table('users')
             ->whereIn('id', array_values(array_unique($ids)));
 
-        if (Schema::hasColumn('users', 'deleted_at')) {
+        if ($this->hasColumn('users', 'deleted_at')) {
             $query->whereNull('deleted_at');
         }
 
@@ -388,20 +440,22 @@ class StoryController extends Controller
         })->values()->all();
     }
 
-    private function recordView(object $story, Request $request): void
+    private function recordView(object $story, Request $request): bool
     {
         if ($this->isBot((string) $request->userAgent())) {
-            return;
+            return false;
         }
 
         $cacheKey = $this->buildCacheKey($story, $request);
 
         if (Cache::has($cacheKey)) {
-            return;
+            return false;
         }
 
         Cache::put($cacheKey, true, now()->addHours(24));
         DB::table('stories')->where('id', $story->id)->increment('view_count');
+
+        return true;
     }
 
     private function buildCacheKey(object $story, Request $request): string
@@ -544,7 +598,7 @@ class StoryController extends Controller
         ]);
 
         $validator->after(function ($validator) use ($request, $story) {
-            if (!Schema::hasTable('themes')) {
+            if (!$this->hasTable('themes')) {
                 return;
             }
 
@@ -610,17 +664,21 @@ class StoryController extends Controller
      */
     public function publicIndex(Request $request)
     {
-        $query = $this->baseStoryQuery();
+        $data = Cache::remember($this->publicIndexCacheKey($request), now()->addMinutes(2), function () use ($request) {
+            $query = $this->baseStoryQuery();
 
-        if ($this->hasStoryColumn('is_published')) {
-            $query->where('is_published', true);
-        }
+            if ($this->hasStoryColumn('is_published')) {
+                $query->where('is_published', true);
+            }
 
-        $stories = $this->applyStoryFilters($query, $request, true)->get();
+            $stories = $this->applyStoryFilters($query, $request, true)->get();
+
+            return $this->normalizeStoryCollection($stories);
+        });
 
         return response()->json([
             'success' => true,
-            'data' => $this->normalizeStoryCollection($stories),
+            'data' => $data,
         ]);
     }
 
@@ -710,6 +768,7 @@ class StoryController extends Controller
 
         $id = DB::table('stories')->insertGetId($insertData);
         $story = DB::table('stories')->where('id', $id)->first();
+        $this->invalidatePublicCache();
 
         $this->activityLog(
             $request,
@@ -763,15 +822,28 @@ class StoryController extends Controller
      */
     public function publicShow(Request $request, string $slug)
     {
-        $query = $this->baseStoryQuery()->where('slug', $this->normalizeSlug($slug));
+        $slug = $this->normalizeSlug($slug);
 
-        if ($this->hasStoryColumn('is_published')) {
-            $query->where('is_published', true);
-        }
+        $payload = Cache::remember($this->publicShowCacheKey($slug), now()->addMinute(), function () use ($slug) {
+            $query = $this->baseStoryQuery()->where('slug', $slug);
 
-        $story = $query->first();
+            if ($this->hasStoryColumn('is_published')) {
+                $query->where('is_published', true);
+            }
 
-        if (!$story) {
+            $story = $query->first();
+
+            if (!$story) {
+                return null;
+            }
+
+            return [
+                'story_id' => (int) $story->id,
+                'data' => $this->normalizeStoryCollection([$story])[0] ?? null,
+            ];
+        });
+
+        if (!$payload) {
             return response()->json([
                 'success' => false,
                 'error' => 'Story not found',
@@ -779,13 +851,16 @@ class StoryController extends Controller
         }
 
         if ($this->hasStoryColumn('view_count') && !$request->boolean('preview')) {
-            $this->recordView($story, $request);
-            $story = $query->first() ?? $story;
+            $viewRecorded = $this->recordView((object) ['id' => $payload['story_id']], $request);
+
+            if ($viewRecorded && isset($payload['data']['view_count'])) {
+                $payload['data']['view_count']++;
+            }
         }
 
         return response()->json([
             'success' => true,
-            'data' => $this->normalizeStoryCollection([$story])[0] ?? null,
+            'data' => $payload['data'],
         ]);
     }
 
@@ -873,6 +948,7 @@ class StoryController extends Controller
 
         DB::table('stories')->where('id', $id)->update($updates);
         $updatedStory = DB::table('stories')->where('id', $id)->first();
+        $this->invalidatePublicCache();
 
         $this->activityLog(
             $request,
@@ -926,6 +1002,8 @@ class StoryController extends Controller
         } else {
             DB::table('stories')->where('id', $id)->delete();
         }
+
+        $this->invalidatePublicCache();
 
         $this->activityLog(
             $request,

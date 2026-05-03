@@ -91,6 +91,7 @@ class UserController extends Controller
     /** cache for safe select columns */
     protected ?array $selectColsCache = null;
     protected ?bool $userStatusFlagCache = null;
+    protected array $columnExistsCache = [];
 
     /**
      * ✅ Safe select columns (won't break if migration not run yet)
@@ -101,7 +102,7 @@ class UserController extends Controller
 
         $cols = [];
         foreach (self::SELECT_COLUMNS as $c) {
-            if (Schema::hasColumn('users', $c)) $cols[] = $c;
+            if ($this->userHasColumn($c)) $cols[] = $c;
         }
 
         $this->selectColsCache = $cols;
@@ -110,7 +111,13 @@ class UserController extends Controller
 
     private function userHasColumn(string $column): bool
     {
-        return Schema::hasColumn('users', $column);
+        $key = "users.{$column}";
+
+        if (!array_key_exists($key, $this->columnExistsCache)) {
+            $this->columnExistsCache[$key] = Schema::hasColumn('users', $column);
+        }
+
+        return $this->columnExistsCache[$key];
     }
 
     private function userUsesDeletedAtStatusFallback(): bool
@@ -926,12 +933,22 @@ if (in_array($role, [
 
         $hashed = hash('sha256', $token);
 
-        $pat = DB::table('personal_access_tokens')
-            ->where('token', $hashed)
-            ->where('tokenable_type', self::USER_TYPE)
+        $select = array_merge(
+            [
+                'pat.id as token_id',
+                'pat.expires_at as token_expires_at',
+            ],
+            array_map(fn ($column) => "u.{$column}", $this->userSelectColumns())
+        );
+
+        $user = DB::table('personal_access_tokens as pat')
+            ->join('users as u', 'u.id', '=', 'pat.tokenable_id')
+            ->select($select)
+            ->where('pat.token', $hashed)
+            ->where('pat.tokenable_type', self::USER_TYPE)
             ->first();
 
-        if (!$pat) {
+        if (!$user) {
             return response()->json([
                 'success' => false,
                 'error'   => 'Invalid token',
@@ -939,10 +956,10 @@ if (in_array($role, [
         }
 
         // Optional expiry guard (same style as CheckRole)
-        if (isset($pat->expires_at) && $pat->expires_at !== null) {
+        if (isset($user->token_expires_at) && $user->token_expires_at !== null) {
             try {
-                if (Carbon::now()->greaterThan(Carbon::parse($pat->expires_at))) {
-                    DB::table('personal_access_tokens')->where('id', $pat->id)->delete();
+                if (Carbon::now()->greaterThan(Carbon::parse($user->token_expires_at))) {
+                    DB::table('personal_access_tokens')->where('id', $user->token_id)->delete();
                     return response()->json([
                         'success' => false,
                         'error'   => 'Token expired',
@@ -956,18 +973,6 @@ if (in_array($role, [
             }
         }
 
-        $user = DB::table('users')
-            ->select($this->userSelectColumns())
-            ->where('id', $pat->tokenable_id)
-            ->first();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'error'   => 'User not found',
-            ], 404);
-        }
-
         if ($this->isUserInactive($user)) {
             return response()->json([
                 'success' => false,
@@ -977,7 +982,7 @@ if (in_array($role, [
 
         // Optionally update last_used_at
         DB::table('personal_access_tokens')
-            ->where('id', $pat->id)
+            ->where('id', $user->token_id)
             ->update([
                 'last_used_at' => Carbon::now(),
                 'updated_at'   => Carbon::now(),
