@@ -6,25 +6,25 @@ function ConsentToggle({ checked, disabled = false, onChange }) {
     return (
         <button
             aria-pressed={checked}
-            className={`relative h-6 w-11 rounded-full border transition-colors ${checked ? 'border-primary bg-primary' : 'border-outline-variant/40 bg-surface-container-highest'} ${disabled ? 'cursor-not-allowed opacity-90' : 'hover:border-primary/60'}`}
+            className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${checked ? 'border-primary bg-primary' : 'border-outline-variant/40 bg-surface-container-highest'} ${disabled ? 'cursor-not-allowed opacity-90' : 'hover:border-primary/60'}`}
             disabled={disabled}
             type="button"
             onClick={() => onChange?.(!checked)}
         >
-            <span className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
+            <span className={`absolute left-1 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
         </button>
     );
 }
 
 function PreferenceRow({ title, description, checked, required = false, onChange }) {
     return (
-        <div className="flex items-center justify-between gap-4 rounded-2xl bg-surface-container-low px-4 py-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-surface-container-low px-4 py-3">
             <div className="min-w-0">
                 <p className="font-label text-sm font-bold text-on-surface">{title}</p>
                 <p className="mt-0.5 text-xs leading-relaxed text-on-surface-variant">{description}</p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-                <span className="text-xs font-bold text-on-surface-variant">{required ? 'Required' : checked ? 'On' : 'Off'}</span>
+            <div className="flex w-[6.75rem] shrink-0 items-center justify-end gap-2">
+                <span className="w-12 text-right text-xs font-bold text-on-surface-variant">{required ? 'Required' : checked ? 'On' : 'Off'}</span>
                 <ConsentToggle checked={checked} disabled={required} onChange={onChange} />
             </div>
         </div>
