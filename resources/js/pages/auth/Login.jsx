@@ -17,17 +17,20 @@ export default function Login() {
     }, []);
 
     const getPostLoginRedirect = () => {
+        const hasPublishPending =
+            localStorage.getItem('onboarding_publish_after_login') === '1' ||
+            sessionStorage.getItem('onboarding_publish_after_login') === '1' ||
+            sessionStorage.getItem('auth_flow_context') === 'story_publish';
+
+        if (hasPublishPending) {
+            sessionStorage.removeItem('oauth_redirect_to');
+            return '/onboarding/story';
+        }
+
         const redirectTo = sessionStorage.getItem('oauth_redirect_to');
         if (redirectTo) {
             sessionStorage.removeItem('oauth_redirect_to');
             return redirectTo;
-        }
-
-        if (
-            sessionStorage.getItem('auth_flow_context') === 'story_publish'
-            && sessionStorage.getItem('onboarding_publish_after_login') === '1'
-        ) {
-            return '/onboarding/story';
         }
 
         return '/dashboard';

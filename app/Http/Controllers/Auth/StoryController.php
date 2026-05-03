@@ -454,8 +454,35 @@ class StoryController extends Controller
 
         Cache::put($cacheKey, true, now()->addHours(24));
         DB::table('stories')->where('id', $story->id)->increment('view_count');
+        $this->logStoryPageView($story, $request, $cacheKey);
 
         return true;
+    }
+
+    private function logStoryPageView(object $story, Request $request, string $cacheKey): void
+    {
+        if (!$this->hasTable('story_page_views')) {
+            return;
+        }
+
+        $viewerUserId = null;
+        if (preg_match('/^sv:\d+:u:(\d+)$/', $cacheKey, $matches) === 1) {
+            $viewerUserId = (int) $matches[1];
+        }
+
+        try {
+            DB::table('story_page_views')->insert([
+                'story_id' => (int) $story->id,
+                'user_id' => $viewerUserId,
+                'visitor_key' => hash('sha256', $cacheKey),
+                'ip_hash' => hash('sha256', (string) $request->ip()),
+                'user_agent_hash' => hash('sha256', (string) $request->userAgent()),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (\Throwable $e) {
+            // Analytics logging should never block a public story page.
+        }
     }
 
     private function buildCacheKey(object $story, Request $request): string

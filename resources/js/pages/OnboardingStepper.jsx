@@ -468,10 +468,6 @@ export default function OnboardingStepper() {
         setLoaderPhase('publishing');
         setLoaderVisible(true);
 
-        // Clear flags before publishing to prevent duplicate attempts
-        localStorage.removeItem('onboarding_publish_after_login');
-        sessionStorage.removeItem('onboarding_publish_after_login');
-
         continuePublishAfterAuth();
     }, [authToken, authUser, draftHydrated, form]);
 

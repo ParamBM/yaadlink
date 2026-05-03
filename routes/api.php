@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\OccasionTypeController;
 use App\Http\Controllers\Auth\StoryController;
 use App\Http\Controllers\Auth\ThemeController;
 use App\Http\Controllers\Auth\UserActivityLogsController;
+use App\Http\Controllers\Auth\DashboardAnalyticsController;
 use App\Http\Controllers\Api\UploadController;
 
 use App\Http\Middleware\CheckRole;
@@ -16,7 +17,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/register',       [UserController::class, 'register']);
     Route::post('/login',          [UserController::class, 'login']);
     Route::post('/logout',         [UserController::class, 'logout'])->middleware(CheckRole::class);
-    Route::get('/check',           [UserController::class, 'authenticateToken'])->middleware(CheckRole::class);
+    Route::get('/check',           [UserController::class, 'authenticateToken']);
 
 });
 
@@ -32,6 +33,7 @@ Route::middleware(CheckRole::class . ':admin')->group(function () {
 
 // ── Activity Logs (admin) ─────────────────────────────────────────
 Route::middleware(CheckRole::class . ':admin')->group(function () {
+    Route::get('/analytics',      [DashboardAnalyticsController::class, 'index']);
     Route::get('/activity-logs',  [UserActivityLogsController::class, 'index']);
 });
 

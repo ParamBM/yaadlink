@@ -937,6 +937,7 @@ if (in_array($role, [
             [
                 'pat.id as token_id',
                 'pat.expires_at as token_expires_at',
+                'pat.last_used_at as token_last_used_at',
             ],
             array_map(fn ($column) => "u.{$column}", $this->userSelectColumns())
         );
@@ -980,13 +981,16 @@ if (in_array($role, [
             ], 403);
         }
 
-        // Optionally update last_used_at
-        DB::table('personal_access_tokens')
-            ->where('id', $user->token_id)
-            ->update([
-                'last_used_at' => Carbon::now(),
-                'updated_at'   => Carbon::now(),
-            ]);
+        // Avoid a write on every dashboard boot; refresh token usage at most every 10 minutes.
+        $lastUsedAt = $user->token_last_used_at ? Carbon::parse($user->token_last_used_at) : null;
+        if (!$lastUsedAt || $lastUsedAt->lt(Carbon::now()->subMinutes(10))) {
+            DB::table('personal_access_tokens')
+                ->where('id', $user->token_id)
+                ->update([
+                    'last_used_at' => Carbon::now(),
+                    'updated_at'   => Carbon::now(),
+                ]);
+        }
 
         return response()->json([
             'success' => true,
