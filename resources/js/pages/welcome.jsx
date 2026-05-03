@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
+import CookieConsentBanner from '../components/CookieConsentBanner';
 
 export default function Welcome() {
     const [isVisible, setIsVisible] = useState(false);
@@ -10,6 +11,8 @@ export default function Welcome() {
 
     return (
         <>
+            <CookieConsentBanner />
+
             <section id="showcase" className="relative flex min-h-[921px] items-center justify-center overflow-hidden py-20">
                 <div className="absolute inset-0 z-0">
                     <div className="absolute top-0 right-0 h-full w-2/3 rounded-bl-[100px] bg-gradient-to-bl from-surface-container-low to-surface opacity-70" />
