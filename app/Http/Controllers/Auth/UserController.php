@@ -240,6 +240,23 @@ class UserController extends Controller
         return 'active';
     }
 
+    private function fixImageUrl(?string $url): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        if (preg_match('/^http:\/\/127\.0\.0\.1:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        if (preg_match('/^http:\/\/localhost:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        return $url;
+    }
+
     private function isUserInactive($user): bool
     {
         return $this->currentUserStatus($user) !== 'active';
@@ -253,6 +270,11 @@ class UserController extends Controller
 
         $user->status = $this->currentUserStatus($user);
         $user->is_active = $user->status === 'active' ? 1 : 0;
+        
+        if (isset($user->image)) {
+            $user->image = $this->fixImageUrl($user->image);
+        }
+        
         return $user;
     }
 

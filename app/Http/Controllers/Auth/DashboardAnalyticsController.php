@@ -126,6 +126,23 @@ class DashboardAnalyticsController extends Controller
         ];
     }
 
+    private function fixImageUrl(?string $url): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        if (preg_match('/^http:\/\/127\.0\.0\.1:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        if (preg_match('/^http:\/\/localhost:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        return $url;
+    }
+
     private function tableExists(string $table): bool
     {
         return Schema::hasTable($table);
@@ -269,7 +286,7 @@ class DashboardAnalyticsController extends Controller
                 'slug' => (string) $story->slug,
                 'title' => $this->storyTitle($story),
                 'tagline' => $story->tagline,
-                'cover_image_url' => $story->cover_image_url,
+                'cover_image_url' => $this->fixImageUrl($story->cover_image_url),
                 'view_count' => (int) $story->view_count,
                 'period_views' => (int) $story->period_views,
                 'is_published' => (bool) $story->is_published,
@@ -300,7 +317,7 @@ class DashboardAnalyticsController extends Controller
                 'id' => (int) $row->id,
                 'name' => (string) $row->name,
                 'email' => (string) $row->email,
-                'image' => $row->image,
+                'image' => $this->fixImageUrl($row->image),
                 'role' => $row->role,
                 'story_count' => (int) $row->story_count,
                 'total_views' => (int) $row->total_views,
@@ -328,7 +345,7 @@ class DashboardAnalyticsController extends Controller
                 'id' => (int) $row->id,
                 'name' => (string) $row->name,
                 'email' => $row->email,
-                'image' => $row->image,
+                'image' => $this->fixImageUrl($row->image),
                 'role' => $row->role,
                 'activity_count' => (int) $row->activity_count,
             ])
