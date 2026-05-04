@@ -321,6 +321,24 @@ class StoryController extends Controller
         return $occasion;
     }
 
+    private function fixImageUrl(?string $url): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        // Fix hardcoded localhost/127.0.0.1 URLs from local development data
+        if (preg_match('/^http:\/\/127\.0\.0\.1:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        if (preg_match('/^http:\/\/localhost:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        return $url;
+    }
+
     private function normalizeMilestones($milestones): array
     {
         if (is_string($milestones) && trim($milestones) !== '') {
@@ -350,7 +368,7 @@ class StoryController extends Controller
                 'description' => isset($milestone['description']) ? (string) $milestone['description'] : '',
                 'event_date' => $eventDate,
                 'date' => $milestone['date'] ?? $eventDate,
-                'image_url' => $milestone['image_url'] ?? null,
+                'image_url' => $this->fixImageUrl($milestone['image_url'] ?? null),
             ];
         }, $milestones));
     }
@@ -368,7 +386,7 @@ class StoryController extends Controller
 
         return array_values(array_map(function ($image) {
             if (!is_array($image)) {
-                $url = (string) $image;
+                $url = $this->fixImageUrl((string) $image);
 
                 return [
                     'url' => $url,
@@ -377,7 +395,7 @@ class StoryController extends Controller
                 ];
             }
 
-            $url = (string) ($image['url'] ?? $image['src'] ?? '');
+            $url = $this->fixImageUrl((string) ($image['url'] ?? $image['src'] ?? ''));
 
             return [
                 'url' => $url,
@@ -400,6 +418,7 @@ class StoryController extends Controller
         $story['approval_status'] = $story['is_published'] ? 'published' : 'hidden';
         $story['is_branding_hidden'] = (bool) ($story['is_branding_hidden'] ?? false);
         $story['view_count'] = (int) ($story['view_count'] ?? 0);
+        $story['cover_image_url'] = $this->fixImageUrl($story['cover_image_url'] ?? null);
         $story['milestones'] = $this->normalizeMilestones($story['milestones'] ?? []);
         $story['images'] = $this->normalizeImages($story['images'] ?? []);
         $story['theme'] = $this->normalizeTheme($theme);

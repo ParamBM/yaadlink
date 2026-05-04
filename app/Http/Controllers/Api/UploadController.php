@@ -68,7 +68,7 @@ class UploadController extends Controller
         }
 
         $relative = str_replace('\\', '/', $path);
-        $url = asset('storage/' . $relative);
+        $url = '/storage/' . $relative;
 
         $this->activityLog(
             $request,
