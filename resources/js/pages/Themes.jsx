@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOccasionTypes } from '../store/slices/occasionTypesSlice';
@@ -254,7 +254,12 @@ function ThemeRendererPreview({ slug, data }) {
                 className="block h-[72vh] min-h-[44rem] w-full border-0 bg-white"
             />
 
-            {mountNode ? createPortal(<ThemeComponent data={data} />, mountNode) : null}
+            {mountNode ? createPortal(
+                <Suspense fallback={null}>
+                    <ThemeComponent data={data} />
+                </Suspense>,
+                mountNode
+            ) : null}
         </div>
     );
 }

@@ -206,7 +206,6 @@ export default function ContactQueries() {
         }
 
         await dispatch(updateContactQuery({ id: selected.id, payload })).unwrap();
-        dispatch(fetchContactQueries({ ...filters, page: 1, per_page: 30 }));
     };
 
     const handleDelete = async () => {
@@ -216,7 +215,6 @@ export default function ContactQueries() {
 
         await dispatch(deleteContactQuery(selected.id)).unwrap();
         setSelectedId(null);
-        dispatch(fetchContactQueries({ ...filters, page: 1, per_page: 30 }));
     };
 
     return (

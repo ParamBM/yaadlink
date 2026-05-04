@@ -218,6 +218,9 @@ const contactQueriesSlice = createSlice({
         builder
             .addCase(deleteContactQuery.fulfilled, (state, action) => {
                 state.items = state.items.filter((item) => String(item.id) !== String(action.payload));
+                if (state.pagination?.total) {
+                    state.pagination.total = Math.max(0, state.pagination.total - 1);
+                }
                 state.cache = {};
             })
             .addCase(deleteContactQuery.rejected, (state, action) => {

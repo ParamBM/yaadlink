@@ -40,13 +40,13 @@ export default function Welcome() {
                                     Create your page
                                     <span aria-hidden="true" className="material-symbols-outlined text-xl">arrow_forward</span>
                                 </Link>
-                                <button
-                                    type="button"
+                                <Link
+                                    to="/story/aarav-weds-meera"
                                     className="flex cursor-pointer items-center justify-center gap-2 rounded-full border border-outline-variant/30 px-8 py-4 font-label text-primary font-semibold transition-colors duration-200 hover:bg-surface-container-low"
                                 >
                                     <span aria-hidden="true" className="material-symbols-outlined text-xl">play_circle</span>
-                                    See Examples
-                                </button>
+                                    See Example
+                                </Link>
                             </div>
                         </div>
 

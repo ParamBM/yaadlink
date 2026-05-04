@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router';
 import { fetchPublicStoryBySlug } from '../store/slices/storiesSlice';
@@ -73,5 +73,18 @@ export default function PublicStoryPage() {
 
     const ThemeComponent = getThemeComponent(storyForTheme?.theme?.slug);
 
-    return <ThemeComponent data={storyForTheme} />;
+    return (
+        <Suspense
+            fallback={(
+                <div className="min-h-screen flex items-center justify-center bg-surface text-on-surface">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
+                        <p className="font-body text-sm text-on-surface-variant">Loading your live page...</p>
+                    </div>
+                </div>
+            )}
+        >
+            <ThemeComponent data={storyForTheme} />
+        </Suspense>
+    );
 }

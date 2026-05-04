@@ -1,11 +1,9 @@
-import MidnightBlue from './MidnightBlue';
-import RoseGold from './RoseGold';
-import SacredWedding from './SacredWedding';
+import { lazy } from 'react';
 
 export const THEMES = {
-    'rose-gold': RoseGold,
-    'midnight-blue': MidnightBlue,
-    'sacred-wedding': SacredWedding,
+    'rose-gold': lazy(() => import('./RoseGold')),
+    'midnight-blue': lazy(() => import('./MidnightBlue')),
+    'sacred-wedding': lazy(() => import('./SacredWedding')),
 };
 
 export const DEFAULT_THEME_SLUG = 'rose-gold';

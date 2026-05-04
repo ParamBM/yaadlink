@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['status', 'created_at']);
+            $table->index(['status', 'deleted_at', 'created_at']);
             $table->index('phone');
             $table->index('email');
         });
