@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class ThemeController extends Controller
 {
@@ -226,6 +227,25 @@ class ThemeController extends Controller
     {
         if (!$file || !$file->isValid()) {
             throw new \RuntimeException('Invalid preview image upload');
+        }
+
+        // On Vercel, we must use Cloudinary
+        if (env('VERCEL') || env('APP_ENV') === 'production') {
+            try {
+                $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
+                    'folder' => 'yaadlink/themes'
+                ]);
+                
+                $secureUrl = is_array($result)
+                    ? ($result['secure_url'] ?? $result['url'] ?? null)
+                    : (is_object($result) && method_exists($result, 'getSecurePath') ? $result->getSecurePath() : null);
+
+                if ($secureUrl) {
+                    return $secureUrl;
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Theme preview Cloudinary upload failed: ' . $e->getMessage());
+            }
         }
 
         $baseDir = public_path("assets/media/image/theme/{$themeUuid}/preview");

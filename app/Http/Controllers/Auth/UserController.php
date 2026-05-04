@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -2185,6 +2186,25 @@ if (in_array($role, [
         $storeProfileImage = function ($file, string $userUuid, ?string $oldPath = null): string {
             if (!$file || !$file->isValid()) {
                 throw new \Exception('Invalid image upload');
+            }
+
+            // On Vercel, we must use Cloudinary
+            if (env('VERCEL') || env('APP_ENV') === 'production') {
+                try {
+                    $result = Cloudinary::uploadApi()->upload($file->getRealPath(), [
+                        'folder' => 'yaadlink/profiles'
+                    ]);
+                    
+                    $secureUrl = is_array($result)
+                        ? ($result['secure_url'] ?? $result['url'] ?? null)
+                        : (is_object($result) && method_exists($result, 'getSecurePath') ? $result->getSecurePath() : null);
+
+                    if ($secureUrl) {
+                        return $secureUrl;
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('Profile image Cloudinary upload failed: ' . $e->getMessage());
+                }
             }
 
             $baseDir = public_path("assets/media/image/user/{$userUuid}/profile");

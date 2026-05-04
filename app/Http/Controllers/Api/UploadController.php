@@ -58,9 +58,30 @@ class UploadController extends Controller
             'image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'], // 5MB max
         ]);
 
+        // On Vercel or in Production, we prefer Cloudinary because the local disk is ephemeral/read-only
+        $isVercel = env('VERCEL') || env('APP_ENV') === 'production';
+        
+        if ($isVercel) {
+            try {
+                return $this->cloudinary($request);
+            } catch (\Throwable $e) {
+                // If Cloudinary fails, try local as a last resort (might work in some environments)
+                \Log::warning('Cloudinary fallback failed in store(): ' . $e->getMessage());
+            }
+        }
+
         $path = Storage::disk('public')->putFile('uploads/stories', $request->file('image'));
 
         if (!$path) {
+            // If local fails and we haven't tried Cloudinary yet, try it now
+            if (!$isVercel) {
+                try {
+                    return $this->cloudinary($request);
+                } catch (\Throwable $e) {
+                    \Log::error('Both local and Cloudinary upload failed: ' . $e->getMessage());
+                }
+            }
+
             return response()->json([
                 'success' => false,
                 'error'   => 'Failed to save the uploaded image.',
