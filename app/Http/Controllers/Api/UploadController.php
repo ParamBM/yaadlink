@@ -68,7 +68,7 @@ class UploadController extends Controller
         }
 
         $relative = str_replace('\\', '/', $path);
-        $url = '/storage/' . $relative;
+        $url = Storage::disk('public')->url($relative);
 
         $this->activityLog(
             $request,

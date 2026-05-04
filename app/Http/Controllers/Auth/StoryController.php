@@ -328,6 +328,7 @@ class StoryController extends Controller
         }
 
         // Fix hardcoded localhost/127.0.0.1 URLs from local development data
+        // We convert them to relative paths so they work on any domain (HTTPS)
         if (preg_match('/^http:\/\/127\.0\.0\.1:8000\/(.*)$/', $url, $matches)) {
             return '/' . $matches[1];
         }
