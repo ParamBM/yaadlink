@@ -133,7 +133,7 @@ export default function LoginPublishModal({ isOpen, onClose, onSuccess, draftSta
                                 <label className="block text-sm font-medium text-on-surface" htmlFor="publish-login-password">Password</label>
                                 <Link
                                     className="text-xs text-primary hover:text-secondary transition-colors font-medium"
-                                    to="/login"
+                                    to="/login?publish=1"
                                     onClick={() => onBeforeAuthRedirect?.()}
                                 >
                                     Forgot?
@@ -200,7 +200,7 @@ export default function LoginPublishModal({ isOpen, onClose, onSuccess, draftSta
                             Don't have an account?
                             <Link
                                 className="text-primary font-semibold hover:text-secondary transition-colors underline-offset-2 hover:underline ml-1"
-                                to="/register"
+                                to="/register?publish=1"
                                 onClick={() => onBeforeAuthRedirect?.()}
                             >
                                 Sign up now

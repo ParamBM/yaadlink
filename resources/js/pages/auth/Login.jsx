@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser } from '../../store/slices/authSlice';
 
@@ -9,18 +9,34 @@ export default function Login() {
     const [password, setPassword] = useState('');
 
     const dispatch = useDispatch();
+    const location = useLocation();
     const navigate = useNavigate();
     const { loading, error } = useSelector((state) => state.auth);
+    const isPublishLogin = new URLSearchParams(location.search).get('publish') === '1';
+
+    const clearPublishRedirectState = () => {
+        localStorage.removeItem('onboarding_publish_after_login');
+        sessionStorage.removeItem('auth_flow_context');
+        sessionStorage.removeItem('onboarding_publish_after_login');
+        sessionStorage.removeItem('oauth_redirect_to');
+    };
 
     useEffect(() => {
         setIsVisible(true);
-    }, []);
+
+        if (!isPublishLogin) {
+            clearPublishRedirectState();
+        }
+    }, [isPublishLogin]);
 
     const getPostLoginRedirect = () => {
         const hasPublishPending =
-            localStorage.getItem('onboarding_publish_after_login') === '1' ||
-            sessionStorage.getItem('onboarding_publish_after_login') === '1' ||
-            sessionStorage.getItem('auth_flow_context') === 'story_publish';
+            isPublishLogin &&
+            (
+                localStorage.getItem('onboarding_publish_after_login') === '1' ||
+                sessionStorage.getItem('onboarding_publish_after_login') === '1' ||
+                sessionStorage.getItem('auth_flow_context') === 'story_publish'
+            );
 
         if (hasPublishPending) {
             sessionStorage.removeItem('oauth_redirect_to');

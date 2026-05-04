@@ -12,6 +12,7 @@ export const headerLinks = [
 export const footerLinks = [
     { label: 'Privacy', to: '/legal#privacy' },
     { label: 'Terms', to: '/legal' },
+    { label: 'Contact Us', to: '/contact-us' },
     { label: 'Support', href: 'mailto:support@yaadlink.com' },
     { label: 'Our Heritage', href: '#' },
 ];

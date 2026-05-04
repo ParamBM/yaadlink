@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser } from '../../store/slices/authSlice';
 import { logoPath, siteName } from '../../lib/site';
@@ -17,19 +17,35 @@ export default function Register() {
     const [isRedirecting, setIsRedirecting] = useState(false);
     
     const dispatch = useDispatch();
+    const location = useLocation();
     const navigate = useNavigate();
     const { loading, error } = useSelector((state) => state.auth);
     const [validationError, setValidationError] = useState('');
+    const isPublishRegister = new URLSearchParams(location.search).get('publish') === '1';
+
+    const clearPublishRedirectState = () => {
+        localStorage.removeItem('onboarding_publish_after_login');
+        sessionStorage.removeItem('auth_flow_context');
+        sessionStorage.removeItem('onboarding_publish_after_login');
+        sessionStorage.removeItem('oauth_redirect_to');
+    };
 
     useEffect(() => {
         setIsVisible(true);
-    }, []);
+
+        if (!isPublishRegister) {
+            clearPublishRedirectState();
+        }
+    }, [isPublishRegister]);
 
     const getPostRegisterRedirect = (user) => {
         const hasPublishPending =
-            localStorage.getItem('onboarding_publish_after_login') === '1' ||
-            sessionStorage.getItem('onboarding_publish_after_login') === '1' ||
-            sessionStorage.getItem('auth_flow_context') === 'story_publish';
+            isPublishRegister &&
+            (
+                localStorage.getItem('onboarding_publish_after_login') === '1' ||
+                sessionStorage.getItem('onboarding_publish_after_login') === '1' ||
+                sessionStorage.getItem('auth_flow_context') === 'story_publish'
+            );
 
         if (hasPublishPending) {
             sessionStorage.removeItem('oauth_redirect_to');

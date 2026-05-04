@@ -16,6 +16,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import OAuthCallback from './pages/auth/OAuthCallback';
 import Legal from './pages/Legal';
+import ContactUs from './pages/ContactUs';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminOnlyRoute from './components/routes/AdminOnlyRoute';
 import DashboardIndexRedirect from './pages/DashboardIndexRedirect';
@@ -27,6 +28,7 @@ import Users from './pages/Users';
 import ActivityLogs from './pages/ActivityLogs';
 import OccasionTypes from './pages/OccasionTypes';
 import Themes from './pages/Themes';
+import ContactQueries from './pages/ContactQueries';
 
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -49,6 +51,7 @@ function AppContent() {
                 <Route element={<Layout />}>
                     <Route path="/" element={<Welcome />} />
                     <Route path="/legal" element={<Legal />} />
+                    <Route path="/contact-us" element={<ContactUs />} />
                 </Route>
 
                 {/* Standalone routes */}
@@ -69,6 +72,7 @@ function AppContent() {
                     <Route path="/dashboard/occasion-types"     element={<AdminOnlyRoute><OccasionTypes /></AdminOnlyRoute>} />
                     <Route path="/dashboard/themes"             element={<AdminOnlyRoute><Themes /></AdminOnlyRoute>} />
                     <Route path="/dashboard/stories"            element={<DashboardStoriesRoute />} />
+                    <Route path="/dashboard/contact-queries"   element={<AdminOnlyRoute><ContactQueries /></AdminOnlyRoute>} />
                 </Route>
             </Routes>
         </BrowserRouter>

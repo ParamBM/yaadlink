@@ -7,6 +7,7 @@ import usersReducer from './slices/usersSlice';
 import activityLogsReducer from './slices/activityLogsSlice';
 import analyticsReducer from './slices/analyticsSlice';
 import uploadReducer from './slices/uploadSlice';
+import contactQueriesReducer from './slices/contactQueriesSlice';
 
 const store = configureStore({
     reducer: {
@@ -18,6 +19,7 @@ const store = configureStore({
         activityLogs: activityLogsReducer,
         analytics: analyticsReducer,
         upload: uploadReducer,
+        contactQueries: contactQueriesReducer,
     },
 });
 

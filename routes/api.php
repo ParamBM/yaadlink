@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\StoryController;
 use App\Http\Controllers\Auth\ThemeController;
 use App\Http\Controllers\Auth\UserActivityLogsController;
 use App\Http\Controllers\Auth\DashboardAnalyticsController;
+use App\Http\Controllers\Auth\ContactQueryController;
 use App\Http\Controllers\Api\UploadController;
 
 use App\Http\Middleware\CheckRole;
@@ -77,6 +78,18 @@ Route::prefix('stories')->group(function () {
         Route::get('/{id}',   [StoryController::class, 'show']);
         Route::put('/{id}',   [StoryController::class, 'update']);
         Route::delete('/{id}',[StoryController::class, 'destroy']);
+    });
+});
+
+// Contact Queries
+Route::prefix('contact-queries')->group(function () {
+    Route::get('/captcha', [ContactQueryController::class, 'captcha']);
+    Route::post('/', [ContactQueryController::class, 'store']);
+
+    Route::middleware(CheckRole::class . ':admin')->group(function () {
+        Route::get('/', [ContactQueryController::class, 'index']);
+        Route::put('/{id}', [ContactQueryController::class, 'update']);
+        Route::delete('/{id}', [ContactQueryController::class, 'destroy']);
     });
 });
 

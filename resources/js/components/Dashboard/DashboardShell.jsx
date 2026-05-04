@@ -11,6 +11,7 @@ const adminNavLinks = [
     { label: 'Occasion Types', icon: 'event_note',   href: '/dashboard/occasion-types' },
     { label: 'Themes',         icon: 'palette',      href: '/dashboard/themes' },
     { label: 'Stories',        icon: 'auto_stories', href: '/dashboard/stories' },
+    { label: 'Contact Queries', icon: 'contact_mail', href: '/dashboard/contact-queries' },
 ];
 
 const userNavLinks = [
