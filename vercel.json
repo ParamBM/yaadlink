@@ -39,7 +39,7 @@
         "APP_DEBUG": "false",
         "APP_URL": "https://yaadlink.vercel.app",
         "APP_KEY": "base64:1XT00cc24Xg6hHtta7BHhEF1fbcC59AGRFLB6rJWu2k=",
-        "GOOGLE_REDIRECT_URI": "https://yaadlink.vercel.app/api/auth/google/callback",
+        "GOOGLE_REDIRECT_URI": "https://yaadlink.vercel.app/auth/google/callback",
         "LOG_CHANNEL": "stderr",
         "CACHE_DRIVER": "database",
         "SESSION_DRIVER": "cookie",

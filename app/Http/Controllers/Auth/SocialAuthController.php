@@ -54,13 +54,19 @@ class SocialAuthController extends Controller
 
     public function redirect()
     {
-        return Socialite::driver('google')->stateless()->redirect();
+        return Socialite::driver('google')
+            ->redirectUrl(route('auth.google.callback'))
+            ->stateless()
+            ->redirect();
     }
 
     public function callback(Request $request)
     {
         try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            $googleUser = Socialite::driver('google')
+                ->redirectUrl(route('auth.google.callback'))
+                ->stateless()
+                ->user();
             
             // Find user by Google ID or Email
             $user = DB::table('users')->where('google_id', $googleUser->getId())->first();
