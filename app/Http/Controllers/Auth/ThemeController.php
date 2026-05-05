@@ -210,6 +210,23 @@ class ThemeController extends Controller
         return is_string($path) && str_starts_with($path, '/assets/media/image/theme/');
     }
 
+    private function fixImageUrl(?string $url): ?string
+    {
+        if (!$url) {
+            return null;
+        }
+
+        if (preg_match('/^http:\/\/127\.0\.0\.1:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        if (preg_match('/^http:\/\/localhost:8000\/(.*)$/', $url, $matches)) {
+            return '/' . $matches[1];
+        }
+
+        return $url;
+    }
+
     private function deleteLocalThemePreview(?string $path): void
     {
         if (!$this->isLocalThemePreviewPath($path)) {
@@ -334,6 +351,10 @@ class ThemeController extends Controller
         if (array_key_exists('config', $theme) && is_string($theme['config']) && $theme['config'] !== '') {
             $decoded = json_decode($theme['config'], true);
             $theme['config'] = json_last_error() === JSON_ERROR_NONE ? $decoded : $theme['config'];
+        }
+
+        if (array_key_exists('preview_image', $theme)) {
+            $theme['preview_image'] = $this->fixImageUrl($theme['preview_image'] ?? null);
         }
 
         return $theme;

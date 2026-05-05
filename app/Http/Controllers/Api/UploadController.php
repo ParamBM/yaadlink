@@ -65,8 +65,12 @@ class UploadController extends Controller
             try {
                 return $this->cloudinary($request);
             } catch (\Throwable $e) {
-                // If Cloudinary fails, try local as a last resort (might work in some environments)
-                \Log::warning('Cloudinary fallback failed in store(): ' . $e->getMessage());
+                \Log::error('Cloudinary upload failed in production: ' . $e->getMessage());
+
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Cloudinary upload failed. Please check the production Cloudinary configuration.',
+                ], 500);
             }
         }
 

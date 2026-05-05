@@ -2,6 +2,39 @@ import React, { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadImage } from '../store/slices/uploadSlice';
 
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
+function getUploadErrorMessage(error) {
+    if (!error) {
+        return 'Failed to upload image. Please try again.';
+    }
+
+    if (typeof error === 'string') {
+        return error;
+    }
+
+    if (Array.isArray(error)) {
+        return error.map(getUploadErrorMessage).join(' ');
+    }
+
+    if (typeof error === 'object') {
+        if (error.message) {
+            return String(error.message);
+        }
+
+        if (error.error) {
+            return getUploadErrorMessage(error.error);
+        }
+
+        return Object.values(error)
+            .flat()
+            .map((value) => String(value))
+            .join(' ');
+    }
+
+    return String(error);
+}
+
 export default function ImageUploader({ value, onUploadSuccess, onRemove, label, isPublic = false }) {
     const fileInputRef = useRef(null);
     const dispatch = useDispatch();
@@ -21,8 +54,8 @@ export default function ImageUploader({ value, onUploadSuccess, onRemove, label,
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
-            setLocalError("File is too large. Maximum size is 5MB.");
+        if (file.size > MAX_UPLOAD_BYTES) {
+            setLocalError("File is too large. Maximum size is 4MB.");
             return;
         }
 
@@ -42,7 +75,7 @@ export default function ImageUploader({ value, onUploadSuccess, onRemove, label,
             onUploadSuccess(resultAction.url);
         } catch (err) {
             console.error("Upload error:", err);
-            setLocalError(err || 'Failed to upload image. Please try again.');
+            setLocalError(getUploadErrorMessage(err));
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) {
@@ -119,7 +152,7 @@ export default function ImageUploader({ value, onUploadSuccess, onRemove, label,
                             </div>
                             <div className="text-center">
                                 <p className="text-sm font-semibold text-on-surface dark:text-white font-body">Click to upload an image</p>
-                                <p className="text-xs text-on-surface-variant dark:text-stone-400 mt-1 font-body">JPG, PNG, WEBP (Max 5MB)</p>
+                                <p className="text-xs text-on-surface-variant dark:text-stone-400 mt-1 font-body">JPG, PNG, WEBP (Max 4MB)</p>
                             </div>
                         </>
                     )}

@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadToCloudinary } from '../store/slices/uploadSlice';
 
+const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
 export default function CompactImageUploader({ value, onUploadSuccess, onRemove, placeholder = "Upload an image..." }) {
     const fileInputRef = useRef(null);
     const dispatch = useDispatch();
@@ -19,8 +21,8 @@ export default function CompactImageUploader({ value, onUploadSuccess, onRemove,
             return;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
-            setLocalError("Too large.");
+        if (file.size > MAX_UPLOAD_BYTES) {
+            setLocalError("Max 4MB.");
             return;
         }
 

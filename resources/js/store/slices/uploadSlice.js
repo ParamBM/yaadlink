@@ -1,6 +1,22 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
+const getUploadRejectMessage = (error, fallback) => {
+    if (error.response?.status === 413) {
+        return 'That image is too large for this deployment. Please upload an image under 4MB.';
+    }
+
+    const responseData = error.response?.data;
+
+    if (typeof responseData === 'string') {
+        return responseData;
+    }
+
+    return responseData?.message ||
+        responseData?.error ||
+        fallback;
+};
+
 // Async thunk for uploading an image to Cloudinary
 export const uploadToCloudinary = createAsyncThunk(
     'upload/uploadToCloudinary',
@@ -30,11 +46,7 @@ export const uploadToCloudinary = createAsyncThunk(
                 return rejectWithValue(response.data.error || 'Cloudinary upload failed.');
             }
         } catch (error) {
-            return rejectWithValue(
-                error.response?.data?.message || 
-                error.response?.data?.error || 
-                'Failed to upload image to Cloudinary.'
-            );
+            return rejectWithValue(getUploadRejectMessage(error, 'Failed to upload image to Cloudinary.'));
         }
     }
 );
@@ -71,11 +83,7 @@ export const uploadImage = createAsyncThunk(
                 return rejectWithValue(response.data.error || 'Upload failed.');
             }
         } catch (error) {
-            return rejectWithValue(
-                error.response?.data?.message || 
-                error.response?.data?.error || 
-                'Failed to upload image.'
-            );
+            return rejectWithValue(getUploadRejectMessage(error, 'Failed to upload image.'));
         }
     }
 );
