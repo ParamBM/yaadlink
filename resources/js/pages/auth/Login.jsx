@@ -90,7 +90,7 @@ export default function Login() {
                     </div>
                     <div className="relative z-20 max-w-lg text-center bg-black/20 p-8 rounded-2xl backdrop-blur-sm border border-white/10">
                         <h2 className="text-5xl font-extrabold text-white mb-6 drop-shadow-lg font-headline tracking-tight leading-tight">Preserve Your Timeless Moments.</h2>
-                        <p className="text-lg text-white/90 font-body drop-shadow-md leading-relaxed">Join Amour &amp; Milestone to craft heirlooms that echo through eternity. From weddings to birthdays, celebrate every milestone.</p>
+                        <p className="text-lg text-white/90 font-body drop-shadow-md leading-relaxed">Join YaadLink to craft heirlooms that echo through eternity. From weddings to birthdays, celebrate every milestone.</p>
                     </div>
                 </div>
 
@@ -98,7 +98,7 @@ export default function Login() {
                     <div className="w-full max-w-md bg-surface-container-lowest rounded-xl p-8 md:p-10 ambient-shadow relative z-10 border border-outline-variant/15">
                         <div className="text-center mb-8">
                             <h1 className="text-3xl font-bold text-on-background font-headline tracking-tight mb-2">Welcome Back</h1>
-                            <p className="text-on-surface-variant font-body text-sm leading-relaxed">Sign in to continue your story with Amour &amp; Milestone.</p>
+                            <p className="text-on-surface-variant font-body text-sm leading-relaxed">Sign in to continue your story with YaadLink.</p>
                             {error && (
                                 <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm text-center">
                                     {error}
