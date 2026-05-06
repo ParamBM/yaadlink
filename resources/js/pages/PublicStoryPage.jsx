@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router';
 import { useParams } from 'react-router';
 import { fetchPublicStoryBySlug } from '../store/slices/storiesSlice';
 import { fetchPublicThemes } from '../store/slices/themesSlice';
@@ -62,6 +63,12 @@ export default function PublicStoryPage() {
                 <div className="max-w-md rounded-[2rem] bg-surface-container-lowest p-10 shadow-[0_24px_60px_rgba(183,16,42,0.08)]">
                     <h1 className="font-headline text-3xl font-bold text-on-surface">This page isn't available.</h1>
                     <p className="mt-3 font-body text-sm text-on-surface-variant">{publicDetailError}</p>
+                    <Link
+                        to="/contact-us"
+                        className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 font-label text-sm font-bold text-on-primary transition-colors hover:bg-primary/90"
+                    >
+                        Contact Us
+                    </Link>
                 </div>
             </div>
         );

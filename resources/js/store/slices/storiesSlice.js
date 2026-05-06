@@ -52,6 +52,21 @@ const removePublicStoryCacheById = (state, storyId) => {
     });
 };
 
+const removePublicStoryCacheBySlug = (state, slug) => {
+    const slugKey = storySlugKey(slug);
+
+    if (!slugKey) {
+        return;
+    }
+
+    delete state.publicStoryCache[slugKey];
+    delete state.publicDetailFetchedAt[slugKey];
+
+    if (state.currentPublicStory && storySlugKey(state.currentPublicStory) === slugKey) {
+        state.currentPublicStory = null;
+    }
+};
+
 export const fetchStories = createAsyncThunk(
     'stories/fetchAll',
     async (params = {}, { getState, rejectWithValue }) => {
@@ -139,13 +154,6 @@ export const fetchPublicStoryBySlug = createAsyncThunk(
     async (slug, { getState, rejectWithValue }) => {
         const { stories, auth } = getState();
         const slugKey = storySlugKey(slug);
-
-        if (slugKey && isFresh(stories.publicDetailFetchedAt[slugKey]) && stories.publicStoryCache[slugKey]) {
-            return {
-                data: stories.publicStoryCache[slugKey],
-                fetchedAt: stories.publicDetailFetchedAt[slugKey],
-            };
-        }
 
         try {
             const headers = {};
@@ -404,6 +412,7 @@ const storiesSlice = createSlice({
             .addCase(fetchPublicStoryBySlug.rejected, (state, action) => {
                 state.publicDetailLoading = false;
                 state.publicDetailError = action.payload;
+                removePublicStoryCacheBySlug(state, action.meta.arg);
             });
 
         builder

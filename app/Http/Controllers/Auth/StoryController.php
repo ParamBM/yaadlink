@@ -874,14 +874,16 @@ class StoryController extends Controller
         $payload = Cache::remember($this->publicShowCacheKey($slug), now()->addMinute(), function () use ($slug) {
             $query = $this->baseStoryQuery()->where('slug', $slug);
 
-            if ($this->hasStoryColumn('is_published')) {
-                $query->where('is_published', true);
-            }
-
             $story = $query->first();
 
             if (!$story) {
                 return null;
+            }
+
+            if ($this->hasStoryColumn('is_published') && !(bool) ($story->is_published ?? false)) {
+                return [
+                    'unavailable' => true,
+                ];
             }
 
             return [
@@ -895,6 +897,14 @@ class StoryController extends Controller
                 'success' => false,
                 'error' => 'Story not found',
             ], 404);
+        }
+
+        if (!empty($payload['unavailable'])) {
+            return response()->json([
+                'success' => false,
+                'error' => 'This story is currently unavailable. It may be paused because of a pending payment or a policy review. Please complete any pending payment or contact us for help.',
+                'error_code' => 'STORY_UNAVAILABLE',
+            ], 403);
         }
 
         if ($this->hasStoryColumn('view_count') && !$request->boolean('preview')) {
