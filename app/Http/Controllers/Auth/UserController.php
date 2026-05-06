@@ -24,40 +24,14 @@ class UserController extends Controller
     private const USER_TYPE = 'App\\Models\\User';
     private const USERS_INDEX_CACHE_VERSION_KEY = 'users_index_cache_version';
 
-    /**
-     * MSIT Home Builder roles:
-     * director, principal, hod, faculty, technical_assistant, it_person, placement_officer, student, alumni, program_topper
-     */
     private const ALLOWED_ROLES = [
         'admin',
-        'director',
-        'principal',
-        'hod',
-        'faculty',
-        'technical_assistant',
-        'it_person',
-        'author',
-        'placement_officer',
-        'student',
-        'alumni', // ✅ added
-        'program_topper', // ✅ added
-        'user', // ✅ added
+        'user',
     ];
 
     private const ROLE_SHORT_MAP = [
-        'admin'               => 'adm',
-        'director'            => 'DIR',
-        'principal'           => 'PRI',
-        'hod'                 => 'HOD',
-        'faculty'             => 'FAC',
-        'technical_assistant' => 'TA',
-        'it_person'           => 'IT',
-        'author'              => 'AUT',
-        'placement_officer'   => 'TPO',   // ✅ added
-        'student'             => 'STD',
-        'alumni'              => 'ALU',   // ✅ added
-        'program_topper'      => 'TOP',   // ✅ added
-        'user'                => 'USR',   // ✅ added
+        'admin' => 'ADM',
+        'user'  => 'USR',
     ];
 
     // ✅ Added: name_short_form + employee_id + department_id
@@ -269,6 +243,11 @@ class UserController extends Controller
             return $user;
         }
 
+        if (isset($user->role)) {
+            $role = strtolower(trim((string) $user->role));
+            $user->role = in_array($role, self::ALLOWED_ROLES, true) ? $role : 'user';
+        }
+
         $user->status = $this->currentUserStatus($user);
         $user->is_active = $user->status === 'active' ? 1 : 0;
         
@@ -397,7 +376,7 @@ class UserController extends Controller
     }
 
         // Safety (if some env doesn't have dept column yet — fall through to 'all'
-        // since CheckRole middleware already validated admin/director role)
+        // since CheckRole middleware already validated the admin role)
         if (!Schema::hasColumn('users', 'department_id')) {
             return ['mode' => 'all', 'department_id' => null];
         }
@@ -427,7 +406,7 @@ class UserController extends Controller
         $deptId = $u->department_id !== null ? (int)$u->department_id : null;
         if ($deptId !== null && $deptId <= 0) $deptId = null;
 
-        $adminRoles = ['admin', 'super_admin', 'director', 'principal', 'author', 'placement_officer'];
+        $adminRoles = ['admin'];
         if (in_array($role, $adminRoles, true)) {
             return ['mode' => 'all', 'department_id' => null];
         }
@@ -445,19 +424,10 @@ class UserController extends Controller
     private function getAllowedCreationRoles(string $actorRole): array
     {
         $actorRole = strtolower(trim($actorRole));
-        $rootRoles = ['admin', 'super_admin', 'director', 'principal', 'author'];
+        $rootRoles = ['admin'];
         
         if (in_array($actorRole, $rootRoles, true)) {
             return self::ALLOWED_ROLES;
-        }
-        
-        if ($actorRole === 'hod') {
-            return ['faculty', 'technical_assistant', 'it_person', 'placement_officer', 'student', 'alumni', 'program_topper'];
-        }
-        
-        $staffRoles = ['faculty', 'technical_assistant', 'it_person', 'placement_officer'];
-        if (in_array($actorRole, $staffRoles, true)) {
-            return ['student', 'alumni', 'program_topper'];
         }
         
         return [];
@@ -466,69 +436,17 @@ class UserController extends Controller
 
     /**
      * Normalize a role + derive short form.
-     * If invalid/missing, default to "faculty" + "FAC".
+     * If invalid/missing, default to "user" + "USR".
      */
     private function normalizeRole(?string $role): array
     {
         $role = $role !== null ? strtolower(trim($role)) : '';
-
-        // normalize separators
         $role = str_replace([' ', '-'], '_', $role);
         $role = preg_replace('/_+/', '_', $role) ?? $role;
         $role = trim($role, '_');
 
-        // aliases/synonyms
-        if ($role === 'tech_assistant' || $role === 'techassistant') {
-            $role = 'technical_assistant';
-        }
-
-        // ✅ alumni aliases
-        if (in_array($role, ['alum', 'alumnus', 'alumni'], true)) {
-            $role = 'alumni';
-        }
-
-        // ✅ program topper aliases
-        if (in_array($role, [
-            'program_topper',
-            'programtopper',
-            'program_top',
-            'program-topper',
-            'topper',
-        ], true)) {
-            $role = 'program_topper';
-        }
-
-        // ✅ placement officer aliases
-        if (in_array($role, [
-            'po',
-            'tpo',
-            'placement',
-            'placementofficer',
-            'placement_officer',
-            'training_placement_officer',
-            'trainingplacementofficer',
-            'trainingandplacementofficer',
-            'training_and_placement_officer',
-            'placement_cell',
-            'placementcell',
-        ], true)) {
-            $role = 'placement_officer';
-        }
-
-        // ✅ author aliases
-if (in_array($role, [
-    'author',
-    'content_author',
-    'contentauthor',
-    'content_writer',
-    'contentwriter',
-    'writer',
-], true)) {
-    $role = 'author';
-}
-
         if (!in_array($role, self::ALLOWED_ROLES, true)) {
-            $role = 'faculty';
+            $role = 'user';
         }
 
         $short = self::ROLE_SHORT_MAP[$role] ?? strtoupper(substr($role, 0, 3));
@@ -1417,6 +1335,7 @@ if (in_array($role, [
 
         $isSelf = ((int)$user->id === (int)($this->actor($request)['id'] ?? 0));
         $currentUserRole = strtolower(trim($user->role ?? ''));
+        $currentUserRole = in_array($currentUserRole, self::ALLOWED_ROLES, true) ? $currentUserRole : 'user';
         $actorRole = strtolower(trim((string)($this->actor($request)['role'] ?? '')));
         $allowedRoles = $this->getAllowedCreationRoles($actorRole);
 
@@ -1626,7 +1545,7 @@ if (in_array($role, [
         }
 
         $actor     = $this->actor($request);
-        $highRoles = ['director', 'principal', 'hod', 'technical_assistant', 'it_person','admin', 'author'];
+        $highRoles = ['admin'];
 
         $isSelf = $actor['id'] === (int) $user->id;
         $isHigh = in_array($actor['role'], $highRoles, true);
@@ -1759,7 +1678,7 @@ if (in_array($role, [
         }
 
         $actor     = $this->actor($request);
-        $highRoles = ['director', 'principal', 'hod', 'technical_assistant', 'it_person','admin', 'author'];
+        $highRoles = ['admin'];
 
         $isSelf = $actor['id'] === (int) $user->id;
         $isHigh = in_array($actor['role'], $highRoles, true);
@@ -3081,9 +3000,9 @@ if (in_array($role, [
             return $try;
         };
 
-        // ✅ always student short form
+        // Default imported accounts to the regular user role.
         $roleShort = function() {
-            return 'STD';
+            return 'USR';
         };
 
         // ✅ resolve id from uuid helper
@@ -3129,8 +3048,7 @@ if (in_array($role, [
                 $nameShort = $getAny($row, ['name_short_form', 'short_name', 'name_short', 'initials']);
                 $empId     = $getAny($row, ['employee_id', 'emp_id', 'employeeid']);
 
-                // ✅ FORCE role student (because this import page is only for students)
-                $role  = 'student';
+                $role  = 'user';
                 $short = $roleShort();
 
                 // status

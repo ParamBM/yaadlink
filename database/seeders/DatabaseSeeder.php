@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             'email'                 => 'user@gmail.com',
             'email_verified_at'     => now(),
             'password'              => Hash::make('user@123'),
-            'role'                  => 'student', // Represents normal user logic
+            'role'                  => 'user',
             'created_at'            => now(),
             'updated_at'            => now(),
         ]);

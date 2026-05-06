@@ -15,11 +15,7 @@ class CheckRole
     /**
      * Usage:
      *   ->middleware('checkRole')                               // any authenticated user
-     *   ->middleware('checkRole:director,principal')            // only director/principal
-     *   ->middleware('checkRole:hod,faculty')                   // only HOD/faculty
-     *   ->middleware('checkRole:student')                       // only students
-     *   ->middleware('checkRole:placement_officer')             // only placement officer
-     *   ->middleware('checkRole:placement_officer,principal')   // multiple roles
+     *   ->middleware('checkRole:admin')                         // only admins
      */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
@@ -105,7 +101,7 @@ class CheckRole
         return $token !== '' ? $token : null;
     }
 
-    /** normalize a single role → canonical token (alnum only), then alias map */
+    /** normalize a single role â†’ canonical token (alnum only), then alias map */
     /** accept both string and flag-based user status values */
     private function isInactiveStatus($status): bool
     {
@@ -150,91 +146,25 @@ class CheckRole
     {
         return $this->normalize($role);
     }
-
-    /**
-     * Map short forms & synonyms → canonical tokens for MSIT Home Builder:
-     *
-     * Canonical set (what controllers see):
-     *  admin, director, principal, hod, faculty, technical_assistant, it_person, placement_officer, student
-     *
-     * DB values (from UserController normalizeRole): same as above (with underscores).
-     */
     private function aliasToCanonical(string $norm): string
     {
-        $map = [
-            'admin'     => 'admin',
+        if (in_array($norm, ['admin', 'adm'], true)) {
+            return 'admin';
+        }
 
-            // director
-            'dir'       => 'director',
-            'director'  => 'director',
-
-            // principal
-            'pri'       => 'principal',
-            'principal' => 'principal',
-
-            // HOD
-            'hod'              => 'hod',
-            'headofdept'       => 'hod',
-            'headofdepartment' => 'hod',
-
-            // faculty
-            'fac'       => 'faculty',
-            'faculty'   => 'faculty',
-            'teacher'   => 'faculty',
-            'professor' => 'faculty',
-
-            // technical assistant
-            'ta'                 => 'technical_assistant',
-            'techassistant'      => 'technical_assistant',
-            'technicalassistant' => 'technical_assistant',
-            'labassistant'       => 'technical_assistant',
-
-            // IT person
-            'it'          => 'it_person',
-            'itstaff'     => 'it_person',
-            'itperson'    => 'it_person',
-            'systemadmin' => 'it_person',
-
-            // ✅ placement officer (T&P)
-            'po'                       => 'placement_officer',
-            'tpo'                      => 'placement_officer',
-            'placement'                => 'placement_officer',
-            'placementofficer'         => 'placement_officer',
-            'trainingplacementofficer' => 'placement_officer',
-            'trainingandplacementofficer' => 'placement_officer',
-            'placementcell'            => 'placement_officer',
-
-            // author
-            'aut'           => 'author',
-            'author'        => 'author',
-            'contentauthor' => 'author',
-            'contentwriter' => 'author',
-            'writer'        => 'author',
-
-            // student
-            'std'       => 'student',
-            'stu'       => 'student',
-            'students'  => 'student',
-            'learner'   => 'student',
-            'candidate' => 'student',
-            'student'   => 'student',
-        ];
-
-        return $map[$norm] ?? $norm;
+        return 'user';
     }
 
-    /** build a set of role aliases for the user (role, short form, and synonyms) */
+    /** build a set of role aliases for the user */
     private function userRoleAliases(object $user): array
     {
         $set = [];
 
-        // from DB role (e.g., "director" | "hod" | "technical_assistant" | "placement_officer")
         $role = $this->normalize((string) ($user->role ?? ''));
         if ($role !== '') {
             $set[] = $role;
         }
 
-        // from DB short form (e.g., "DIR","PRI","HOD","FAC","TA","IT","PO","TPO","STD")
         $short = $this->normalize((string) ($user->role_short_form ?? ''));
         if ($short !== '') {
             $set[] = $this->aliasToCanonical($short);
@@ -264,7 +194,7 @@ class CheckRole
                     return $arr;
                 }
             } catch (\Throwable $e) {
-                // ignore parse errors → default *
+                // ignore parse errors â†’ default *
             }
         }
 

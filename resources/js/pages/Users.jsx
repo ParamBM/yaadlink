@@ -13,35 +13,18 @@ import {
 
 const ROLE_OPTIONS = [
     'admin',
-    'director',
-    'principal',
-    'hod',
-    'faculty',
-    'technical_assistant',
-    'it_person',
-    'author',
-    'placement_officer',
-    'student',
-    'alumni',
-    'program_topper',
     'user',
 ];
 
 const ROLE_COLORS = {
     admin: 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-red-300',
-    director: 'bg-tertiary-fixed/30 text-on-tertiary-fixed dark:bg-tertiary/15 dark:text-tertiary-fixed',
-    principal: 'bg-secondary-fixed/40 text-on-secondary-fixed dark:bg-secondary/15 dark:text-secondary-fixed',
-    hod: 'bg-secondary/10 text-secondary dark:bg-secondary/20 dark:text-red-300',
-    faculty: 'bg-secondary/10 text-secondary dark:bg-secondary/20 dark:text-red-300',
-    technical_assistant: 'bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary',
-    it_person: 'bg-tertiary-fixed/30 text-on-tertiary-fixed dark:bg-tertiary/15 dark:text-tertiary-fixed',
-    author: 'bg-primary-container/10 text-primary-container dark:bg-primary-container/20 dark:text-primary',
-    placement_officer: 'bg-secondary-container/15 text-secondary dark:bg-secondary-container/15 dark:text-secondary-fixed',
-    student: 'bg-surface-container-high text-on-surface-variant dark:bg-stone-800 dark:text-stone-400',
-    alumni: 'bg-surface-container-high text-on-surface-variant dark:bg-stone-800 dark:text-stone-300',
-    program_topper: 'bg-tertiary-fixed/20 text-tertiary dark:bg-tertiary/15 dark:text-tertiary-fixed',
     user: 'bg-surface-container-high text-on-surface-variant dark:bg-stone-800 dark:text-stone-400',
 };
+
+function normalizeRoleValue(role) {
+    const normalized = String(role || 'user').trim().toLowerCase();
+    return ROLE_OPTIONS.includes(normalized) ? normalized : 'user';
+}
 
 function humanize(value) {
     return String(value || 'user')
@@ -99,12 +82,12 @@ function formatErrorMessage(error) {
 }
 
 function RoleBadge({ role }) {
-    const normalizedRole = String(role || 'user').toLowerCase();
+    const normalizedRole = normalizeRoleValue(role);
     const classes = ROLE_COLORS[normalizedRole] || ROLE_COLORS.user;
 
     return (
         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${classes}`}>
-            {humanize(role || 'user')}
+            {humanize(normalizedRole)}
         </span>
     );
 }
@@ -183,7 +166,7 @@ function UserModal({ mode, user, submitting, error, onClose, onSubmit }) {
         name: user?.name ?? '',
         email: user?.email ?? '',
         password: '',
-        role: String(user?.role || 'user').toLowerCase(),
+        role: normalizeRoleValue(user?.role),
         status: normalizeStatus(user),
     });
 
@@ -192,13 +175,12 @@ function UserModal({ mode, user, submitting, error, onClose, onSubmit }) {
             name: user?.name ?? '',
             email: user?.email ?? '',
             password: '',
-            role: String(user?.role || 'user').toLowerCase(),
+            role: normalizeRoleValue(user?.role),
             status: normalizeStatus(user),
         });
     }, [mode, user]);
 
-    const availableRoles = [...new Set([...ROLE_OPTIONS, String(user?.role || 'user').toLowerCase()])]
-        .filter(Boolean);
+    const availableRoles = ROLE_OPTIONS;
 
     const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -615,14 +597,14 @@ export default function Users() {
             const matchesSearch = !term
                 || user.name?.toLowerCase().includes(term)
                 || user.email?.toLowerCase().includes(term);
-            const matchesRole = !roleFilter || String(user.role || '').toLowerCase() === roleFilter;
+            const matchesRole = !roleFilter || normalizeRoleValue(user.role) === roleFilter;
 
             return matchesSearch && matchesRole;
         });
     }, [items, roleFilter, search]);
 
     const filterRoles = useMemo(
-        () => [...new Set(items.map((user) => String(user.role || '').toLowerCase()).filter(Boolean))]
+        () => [...new Set(items.map((user) => normalizeRoleValue(user.role)).filter(Boolean))]
             .sort((left, right) => left.localeCompare(right)),
         [items]
     );
