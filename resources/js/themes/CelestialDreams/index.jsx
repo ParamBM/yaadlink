@@ -520,7 +520,7 @@ export default function CelestialDreams({ data }) {
                     {/* HERO */}
                     <section
                         id="hero"
-                        className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 text-center"
+                        className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-24 md:pt-0 text-center"
                     >
                         <div className="relative z-10 mx-auto grid max-w-6xl gap-12 md:grid-cols-2 md:items-center md:text-left">
                             <Reveal>
