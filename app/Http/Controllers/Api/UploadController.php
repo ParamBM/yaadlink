@@ -5,16 +5,19 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\UserActivityLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 
 class UploadController extends Controller
 {
+    private const USER_TYPE = 'App\\Models\\User';
+
     private function activityActorOverride(Request $request): ?array
     {
-        $userId = $request->attributes->get('auth_tokenable_id');
+        $this->attachOptionalAuthActor($request);
 
-        if ($userId !== null) {
+        if ($request->attributes->get('auth_tokenable_id') !== null) {
             return null;
         }
 
@@ -23,6 +26,62 @@ class UploadController extends Controller
             'role' => 'guest',
             'type' => 'guest',
         ];
+    }
+
+    private function attachOptionalAuthActor(Request $request): void
+    {
+        if ($request->attributes->get('auth_tokenable_id') !== null) {
+            return;
+        }
+
+        $header = (string) $request->header('Authorization', '');
+        $token = stripos($header, 'Bearer ') === 0
+            ? trim(substr($header, 7))
+            : trim($header);
+
+        if ($token === '') {
+            return;
+        }
+
+        $user = DB::table('personal_access_tokens as pat')
+            ->join('users as u', 'u.id', '=', 'pat.tokenable_id')
+            ->where('pat.token', hash('sha256', $token))
+            ->where('pat.tokenable_type', self::USER_TYPE)
+            ->select([
+                'pat.expires_at as token_expires_at',
+                'u.id',
+                'u.role',
+                'u.status',
+                'u.deleted_at',
+            ])
+            ->first();
+
+        if (!$user) {
+            return;
+        }
+
+        if ($user->token_expires_at !== null && now()->greaterThan(\Carbon\Carbon::parse($user->token_expires_at))) {
+            return;
+        }
+
+        $status = $user->status ?? null;
+        $inactive = in_array(strtolower(trim((string) $status)), ['0', 'false', 'inactive', 'disabled'], true)
+            || ($status === null && $user->deleted_at !== null);
+
+        if ($inactive) {
+            return;
+        }
+
+        $request->attributes->set('auth_tokenable_type', self::USER_TYPE);
+        $request->attributes->set('auth_tokenable_id', (int) $user->id);
+        $request->attributes->set('auth_role', $this->canonicalRole((string) ($user->role ?? '')));
+    }
+
+    private function canonicalRole(string $role): string
+    {
+        $normalized = preg_replace('/[^a-z0-9]+/', '', mb_strtolower(trim($role))) ?? '';
+
+        return in_array($normalized, ['admin', 'adm'], true) ? 'admin' : 'user';
     }
 
     private function activityLog(
@@ -54,6 +113,8 @@ class UploadController extends Controller
      */
     public function store(Request $request)
     {
+        $this->attachOptionalAuthActor($request);
+
         $request->validate([
             'image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'], // 5MB max
         ]);
@@ -126,6 +187,8 @@ class UploadController extends Controller
     public function cloudinary(Request $request)
     {
         try {
+            $this->attachOptionalAuthActor($request);
+
             $request->validate([
                 'image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp,gif', 'max:5120'], // 5MB max
             ]);
