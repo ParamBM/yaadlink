@@ -6,6 +6,8 @@ export const THEMES = {
     'sacred-wedding': lazy(() => import('./SacredWedding')),
     'royal-velvet': lazy(() => import('./RoyalVelvet')),
     'celestial-dreams': lazy(() => import('./CelestialDreams')),
+    'model-portfolio': lazy(() => import('./ModelPortfolio')),
+    'couture-press': lazy(() => import('./CouturePress')),
 };
 
 export const DEFAULT_THEME_SLUG = 'rose-gold';

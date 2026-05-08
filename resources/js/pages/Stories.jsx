@@ -276,6 +276,20 @@ function StoryModal({
         ? occasionTypes.find((occasion) => String(occasion?.id) === themeLockedOccasionId)?.name || 'selected occasion'
         : '';
 
+    // Returns contextual label/placeholder for person_two_name based on occasion type
+    const personTwoMeta = useMemo(() => {
+        const occId = String(form.occasion_type_id || '').trim();
+        const occ = occasionTypes.find((o) => String(o?.id) === occId);
+        const haystack = `${occ?.name || ''} ${occ?.slug || ''}`.toLowerCase();
+        if (haystack.includes('portfolio')) {
+            return { label: 'Stage Name / Nickname', placeholder: 'e.g., Alex Stone' };
+        }
+        if (haystack.includes('birthday')) {
+            return { label: 'Also Known As', placeholder: 'e.g., Sunny' };
+        }
+        return { label: 'Person Two', placeholder: 'Mira' };
+    }, [occasionTypes, form.occasion_type_id]);
+
     useEffect(() => {
         setIsVisible(true);
     }, []);
@@ -595,13 +609,13 @@ function StoryModal({
 
                                 <div className="flex flex-col gap-1.5">
                                     <label className="font-label text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
-                                        Person Two *
+                                        {personTwoMeta.label} *
                                     </label>
                                     <input
                                         required
                                         value={form.person_two_name}
                                         onChange={handlePersonTwoChange}
-                                        placeholder="Mira"
+                                        placeholder={personTwoMeta.placeholder}
                                         className="w-full rounded-2xl border border-outline-variant/30 bg-surface-container px-4 py-2.5 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/40 focus:border-primary/50 dark:border-stone-700 dark:bg-stone-800 dark:text-white dark:focus:border-red-400/50"
                                     />
                                 </div>

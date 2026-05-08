@@ -180,6 +180,19 @@ export default function OnboardingStepper() {
         return '';
     }, [resolvedOccasionTypeId, form.occasion_type_id, selectedTheme, initialOccasionId, occasionTypes]);
 
+    // Returns contextual label/placeholder for person_two_name based on occasion type
+    const personTwoMeta = useMemo(() => {
+        const occ = occasionTypes.find((o) => String(o?.id) === String(effectiveOccasionTypeId));
+        const haystack = `${occ?.name || ''} ${occ?.slug || ''}`.toLowerCase();
+        if (haystack.includes('portfolio')) {
+            return { label: 'Stage Name / Nickname *', placeholder: 'e.g., Alex Stone' };
+        }
+        if (haystack.includes('birthday')) {
+            return { label: 'Also Known As *', placeholder: 'e.g., Sunny' };
+        }
+        return { label: 'Person Two Name *', placeholder: 'e.g., Meera' };
+    }, [occasionTypes, effectiveOccasionTypeId]);
+
     const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
     useEffect(() => {
@@ -654,11 +667,13 @@ export default function OnboardingStepper() {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <label className="font-label text-sm font-semibold text-on-surface pl-4" htmlFor="person_two_name">Person Two Name *</label>
+                                            <label className="font-label text-sm font-semibold text-on-surface pl-4" htmlFor="person_two_name">
+                                                {personTwoMeta.label}
+                                            </label>
                                             <input
                                                 className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-full px-6 py-4 focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest text-on-surface placeholder-on-surface-variant/50 ambient-shadow outline-none transition-all"
                                                 id="person_two_name"
-                                                placeholder="e.g., Meera"
+                                                placeholder={personTwoMeta.placeholder}
                                                 type="text"
                                                 value={form.person_two_name}
                                                 onChange={(e) => set('person_two_name', e.target.value)}
