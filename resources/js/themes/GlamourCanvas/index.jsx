@@ -343,6 +343,9 @@ export default function GlamourCanvas({ data }) {
     const [navVisible, setNavVisible] = useState(false);
     const carouselScrollRef = useRef(null);
     const scrollProgressRef = useRef(0);
+    const carouselTargetProgressRef = useRef(0);
+    const carouselDirectionRef = useRef(1);
+    const carouselPauseUntilRef = useRef(0);
 
     const storyParagraphs = (content.summary || '')
         .split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
@@ -370,9 +373,10 @@ export default function GlamourCanvas({ data }) {
     }, [galleryImages]);
 
     const avatarSrc = content.coverImageUrl || portfolioImages[0]?.src || '/images/avatar.jpg';
+    const firstPersonName = content.people[0] || content.title || 'Aura';
     const displayName = content.people.length > 1
         ? `${content.people[0]} (${content.people[1]})`
-        : content.people[0] || content.title || 'Aura Artistry';
+        : firstPersonName || 'Aura Artistry';
 
     useEffect(() => {
         const onScroll = () => setNavVisible(window.scrollY > window.innerHeight * 0.5);
@@ -408,28 +412,56 @@ export default function GlamourCanvas({ data }) {
             const scroller = carouselScrollRef.current;
             if (!scroller) return;
             const scrollable = Math.max(1, scroller.scrollWidth - scroller.clientWidth);
-            scrollProgressRef.current = clamp(scroller.scrollLeft / scrollable);
+            carouselTargetProgressRef.current = clamp(scroller.scrollLeft / scrollable);
+        };
+
+        let rafId;
+        let lastTime = performance.now();
+        const animateCarousel = (time) => {
+            const scroller = carouselScrollRef.current;
+            const deltaSeconds = Math.min(0.05, (time - lastTime) / 1000);
+            lastTime = time;
+
+            scrollProgressRef.current += (carouselTargetProgressRef.current - scrollProgressRef.current) * 0.08;
+
+            if (scroller && time > carouselPauseUntilRef.current) {
+                const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+                if (maxScroll > 0) {
+                    if (scroller.scrollLeft >= maxScroll - 1) carouselDirectionRef.current = -1;
+                    if (scroller.scrollLeft <= 1) carouselDirectionRef.current = 1;
+                    scroller.scrollLeft += carouselDirectionRef.current * deltaSeconds * 18;
+                    updateGalleryProgress();
+                }
+            }
+
+            rafId = requestAnimationFrame(animateCarousel);
         };
 
         updateGalleryProgress();
         const scroller = carouselScrollRef.current;
         scroller?.addEventListener('scroll', updateGalleryProgress, { passive: true });
         window.addEventListener('resize', updateGalleryProgress);
+        rafId = requestAnimationFrame(animateCarousel);
 
         return () => {
             observer.disconnect();
+            cancelAnimationFrame(rafId);
             scroller?.removeEventListener('scroll', updateGalleryProgress);
             window.removeEventListener('resize', updateGalleryProgress);
         };
     }, [portfolioImages.length]);
 
     const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const pauseCarouselAutoscroll = (duration = 1800) => {
+        carouselPauseUntilRef.current = performance.now() + duration;
+    };
     const handleCarouselWheel = (event) => {
         const scroller = carouselScrollRef.current;
         if (!scroller) return;
         const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
         if (!delta) return;
-        scroller.scrollLeft += delta;
+        pauseCarouselAutoscroll(2400);
+        scroller.scrollLeft += delta * 0.35;
         event.preventDefault();
     };
 
@@ -491,6 +523,8 @@ export default function GlamourCanvas({ data }) {
                 .gc-carousel-scroll {
                     scrollbar-width: none;
                     -ms-overflow-style: none;
+                    scroll-behavior: smooth;
+                    overscroll-behavior-x: contain;
                     touch-action: pan-x;
                 }
                 .gc-carousel-scroll::-webkit-scrollbar { display: none; }
@@ -513,7 +547,7 @@ export default function GlamourCanvas({ data }) {
                     }}>
                     <button onClick={() => scrollTo('hero')} className="text-[22px] font-medium tracking-[0.2em] uppercase"
                         style={{ fontFamily: "'Playfair Display', serif", color: '#D4AF37' }}>
-                        {displayName}
+                        {firstPersonName}
                     </button>
                     <nav className="hidden items-center gap-10 md:flex">
                         {[
@@ -611,7 +645,13 @@ export default function GlamourCanvas({ data }) {
                             Captured in Light
                         </h2>
                     </div>
-                    <div ref={carouselScrollRef} onWheel={handleCarouselWheel} className="gc-carousel-scroll overflow-x-auto overflow-y-hidden pb-4">
+                    <div
+                        ref={carouselScrollRef}
+                        onWheel={handleCarouselWheel}
+                        onPointerDown={() => pauseCarouselAutoscroll(2200)}
+                        onTouchStart={() => pauseCarouselAutoscroll(2200)}
+                        className="gc-carousel-scroll overflow-x-auto overflow-y-hidden pb-4"
+                    >
                         <div className="gc-carousel-3d relative mx-auto" style={{ width: '1800px', maxWidth: '180vw', height: '480px', perspective: '900px', perspectiveOrigin: '50% 50%' }}>
                             {portfolioImages.map((img, i) => (
                                 <CarouselItem key={img.key || i} image={img} index={i} total={portfolioImages.length} scrollProgress={scrollProgressRef} />
