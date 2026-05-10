@@ -8,6 +8,8 @@ export const THEMES = {
     'celestial-dreams': lazy(() => import('./CelestialDreams')),
     'model-portfolio': lazy(() => import('./ModelPortfolio')),
     'couture-press': lazy(() => import('./CouturePress')),
+    'lens-noir': lazy(() => import('./LensNoir')),
+    'glamour-canvas': lazy(() => import('./GlamourCanvas')),
 };
 
 export const DEFAULT_THEME_SLUG = 'rose-gold';
